@@ -1,6 +1,7 @@
 /**
  * API Client — wrapper pour tous les appels au backend.
  * Inclut automatiquement le token JWT Supabase.
+ * Gère les erreurs réseau et les 500 sans crasher.
  */
 const API_BASE = '/api';
 
@@ -12,17 +13,35 @@ async function authHeaders() {
   };
 }
 
+/**
+ * Safe JSON parse — retourne un fallback si le body n'est pas du JSON valide.
+ */
+async function safeJson(res, fallback = null) {
+  try {
+    const text = await res.text();
+    return text ? JSON.parse(text) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
 const api = {
   // ── Clients ─────────────────────────────────────────────────────────
   async getClients() {
-    const res = await fetch(`${API_BASE}/clients`, { headers: await authHeaders() });
-    if (res.status === 401) { window.location.href = '/login.html'; return []; }
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/clients`, { headers: await authHeaders() });
+      if (res.status === 401) { window.location.href = '/login.html'; return []; }
+      if (!res.ok) { console.error('GET /clients error:', res.status); return []; }
+      return await safeJson(res, []);
+    } catch (e) { console.error('Network error (clients):', e); return []; }
   },
 
   async getClient(id) {
-    const res = await fetch(`${API_BASE}/clients/${id}`, { headers: await authHeaders() });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/clients/${id}`, { headers: await authHeaders() });
+      if (!res.ok) return null;
+      return await safeJson(res, null);
+    } catch (e) { console.error('Network error (client):', e); return null; }
   },
 
   async createClient(data) {
@@ -31,7 +50,7 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   async updateClient(id, data) {
@@ -40,7 +59,7 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   async deleteClient(id) {
@@ -48,19 +67,25 @@ const api = {
       method: 'DELETE',
       headers: await authHeaders(),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   // ── Projets ─────────────────────────────────────────────────────────
   async getProjets() {
-    const res = await fetch(`${API_BASE}/projets`, { headers: await authHeaders() });
-    if (res.status === 401) { window.location.href = '/login.html'; return []; }
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/projets`, { headers: await authHeaders() });
+      if (res.status === 401) { window.location.href = '/login.html'; return []; }
+      if (!res.ok) { console.error('GET /projets error:', res.status); return []; }
+      return await safeJson(res, []);
+    } catch (e) { console.error('Network error (projets):', e); return []; }
   },
 
   async getProjet(id) {
-    const res = await fetch(`${API_BASE}/projets/${id}`, { headers: await authHeaders() });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/projets/${id}`, { headers: await authHeaders() });
+      if (!res.ok) return null;
+      return await safeJson(res, null);
+    } catch (e) { console.error('Network error (projet):', e); return null; }
   },
 
   async createProjet(data) {
@@ -69,7 +94,7 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   async updateProjet(id, data) {
@@ -78,7 +103,7 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   async deleteProjet(id) {
@@ -86,19 +111,25 @@ const api = {
       method: 'DELETE',
       headers: await authHeaders(),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   // ── Factures ────────────────────────────────────────────────────────
   async getFactures() {
-    const res = await fetch(`${API_BASE}/factures`, { headers: await authHeaders() });
-    if (res.status === 401) { window.location.href = '/login.html'; return []; }
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/factures`, { headers: await authHeaders() });
+      if (res.status === 401) { window.location.href = '/login.html'; return []; }
+      if (!res.ok) { console.error('GET /factures error:', res.status); return []; }
+      return await safeJson(res, []);
+    } catch (e) { console.error('Network error (factures):', e); return []; }
   },
 
   async getFacture(id) {
-    const res = await fetch(`${API_BASE}/factures/${id}`, { headers: await authHeaders() });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/factures/${id}`, { headers: await authHeaders() });
+      if (!res.ok) return null;
+      return await safeJson(res, null);
+    } catch (e) { console.error('Network error (facture):', e); return null; }
   },
 
   async updateFacture(id, data) {
@@ -107,7 +138,7 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   // ── Workflow ────────────────────────────────────────────────────────
@@ -118,7 +149,7 @@ const api = {
       headers: await authHeaders(),
       body
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 
   async addLigneService(factureId, data) {
@@ -127,6 +158,6 @@ const api = {
       headers: await authHeaders(),
       body: JSON.stringify(data),
     });
-    return { status: res.status, data: await res.json() };
+    return { status: res.status, data: await safeJson(res, {}) };
   },
 };

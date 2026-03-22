@@ -24,7 +24,6 @@ app.get('/api/config', (req, res) => {
 app.use('/api/clients', requireAuth, require('./routes/clients'));
 app.use('/api/projets', requireAuth, require('./routes/projets'));
 app.use('/api/factures', requireAuth, require('./routes/factures'));
-app.use('/api', requireAuth, require('./routes/factures'));
 
 // ── Gestion d'erreur globale ────────────────────────────────────────
 app.use((err, req, res, next) => {
@@ -34,8 +33,12 @@ app.use((err, req, res, next) => {
 
 // ── Démarrage asynchrone ────────────────────────────────────────────
 async function start() {
-  await initDatabase();
-  console.log('✅ Base de données PostgreSQL initialisée');
+  try {
+    await initDatabase();
+    console.log('✅ Base de données PostgreSQL initialisée');
+  } catch (err) {
+    console.error('⚠️ Erreur init DB (le serveur continue) :', err.message);
+  }
 
   app.listen(PORT, () => {
     console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
@@ -44,7 +47,6 @@ async function start() {
 
 start().catch(err => {
   console.error('💥 Échec au démarrage :', err);
-  process.exit(1);
 });
 
 module.exports = app;

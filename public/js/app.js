@@ -237,13 +237,27 @@ async function renderView() {
   }
   
   el.innerHTML = '<div class="flex items-center justify-center h-64"><div class="w-8 h-8 border-2 border-electric/30 border-t-electric rounded-full animate-spin"></div></div>';
-  switch (currentView) {
-    case 'dashboard': el.innerHTML = await renderDashboard(); initDashboardCharts(); break;
-    case 'clients':   el.innerHTML = await renderClients(); break;
-    case 'projets':   el.innerHTML = await renderProjets(); break;
-    case 'factures':  el.innerHTML = await renderFactures(); break;
-    case 'profil':    el.innerHTML = await renderProfil(); initProfilCharts(); break;
-    case 'parametres':el.innerHTML = await renderParametres(); break;
+  try {
+    switch (currentView) {
+      case 'dashboard': el.innerHTML = await renderDashboard(); try { initDashboardCharts(); } catch(ce) { console.error('Chart error:', ce); } break;
+      case 'clients':   el.innerHTML = await renderClients(); break;
+      case 'projets':   el.innerHTML = await renderProjets(); break;
+      case 'factures':  el.innerHTML = await renderFactures(); break;
+      case 'profil':    el.innerHTML = await renderProfil(); try { initProfilCharts(); } catch(ce) { console.error('Chart error:', ce); } break;
+      case 'parametres':el.innerHTML = await renderParametres(); break;
+    }
+  } catch (err) {
+    console.error('Erreur de chargement:', err);
+    el.innerHTML = `
+      <div class="${glass} p-12 text-center max-w-lg mx-auto mt-12">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-accent-red/15 flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-accent-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+        </div>
+        <p class="text-white/70 font-semibold mb-2">Erreur de chargement</p>
+        <p class="text-sm text-white/40 mb-6">${err.message || 'Le serveur a rencontré une erreur. Vérifiez votre connexion et réessayez.'}</p>
+        <button onclick="renderView()" class="${btnPrimary} text-sm">Réessayer</button>
+      </div>`;
+    toast('Erreur: ' + (err.message || 'Impossible de charger les données'), 'error');
   }
 }
 
@@ -252,7 +266,14 @@ async function renderView() {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderDashboard() {
   let clients = [], projets = [], factures = [];
-  try { [clients, projets, factures] = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]); } catch(e) {}
+  try {
+    const results = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]);
+    clients = Array.isArray(results[0]) ? results[0] : [];
+    projets = Array.isArray(results[1]) ? results[1] : [];
+    factures = Array.isArray(results[2]) ? results[2] : [];
+  } catch(e) {
+    console.error('Dashboard data error:', e);
+  }
 
   // Store factures globally for charts
   window._factures = factures;
@@ -418,6 +439,7 @@ async function renderDashboard() {
 }
 
 function initDashboardCharts() {
+  try {
   const canvas = document.getElementById('revenue-chart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -474,13 +496,15 @@ function initDashboardCharts() {
       interaction: { intersect: false, mode: 'index' },
     },
   });
+  } catch(e) { console.error('Dashboard chart error:', e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // CLIENTS VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderClients() {
-  const clients = await api.getClients();
+  let clients = [];
+  try { const r = await api.getClients(); clients = Array.isArray(r) ? r : []; } catch(e) { console.error('Clients error:', e); }
   return `
   <div class="animate-slide-up">
     <div class="flex items-center justify-between mb-6">
@@ -529,7 +553,7 @@ async function renderClients() {
 
 async function showClientForm(id = null) {
   let client = { nom: '', contact_email: '', id_fiscal: '' };
-  if (id) { client = await api.getClient(id); }
+  try { if (id) { client = await api.getClient(id) || client; } } catch(e) { toast('Erreur chargement client', 'error'); return; }
   openModal(`
     <div class="${glass} p-8">
       <h3 class="text-lg font-bold mb-6">${id ? 'Modifier le client' : 'Nouveau client'}</h3>
@@ -547,12 +571,14 @@ async function showClientForm(id = null) {
 
 async function submitClient(e, id) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const data = Object.fromEntries(fd);
-  if (id) { await api.updateClient(id, data); toast('Client mis à jour'); }
-  else { await api.createClient(data); toast('Client créé'); }
-  closeModal();
-  renderView();
+  try {
+    const fd = new FormData(e.target);
+    const data = Object.fromEntries(fd);
+    if (id) { await api.updateClient(id, data); toast('Client mis à jour'); }
+    else { await api.createClient(data); toast('Client créé'); }
+    closeModal();
+    renderView();
+  } catch(err) { toast('Erreur: ' + (err.message || 'Impossible de sauvegarder'), 'error'); }
 }
 
 async function deleteClient(id, nom) {
@@ -571,17 +597,20 @@ async function deleteClient(id, nom) {
 }
 
 async function confirmDeleteClient(id) {
-  await api.deleteClient(id);
-  closeModal(); toast('Client supprimé'); renderView();
+  try { await api.deleteClient(id); closeModal(); toast('Client supprimé'); renderView(); }
+  catch(err) { toast('Erreur suppression: ' + (err.message || ''), 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROJETS VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderProjets() {
-  const projets = await api.getProjets();
-  const clients = await api.getClients();
-  // Store clients globally for the form
+  let projets = [], clients = [];
+  try {
+    const results = await Promise.all([api.getProjets(), api.getClients()]);
+    projets = Array.isArray(results[0]) ? results[0] : [];
+    clients = Array.isArray(results[1]) ? results[1] : [];
+  } catch(e) { console.error('Projets error:', e); }
   window._clients = clients;
   return `
   <div class="animate-slide-up">
@@ -715,13 +744,14 @@ async function deleteProjet(id, nom) {
       </div>
     </div>`);
 }
-async function confirmDeleteProjet(id) { await api.deleteProjet(id); closeModal(); toast('Projet supprimé'); renderView(); }
+async function confirmDeleteProjet(id) { try { await api.deleteProjet(id); closeModal(); toast('Projet supprimé'); renderView(); } catch(err) { toast('Erreur: ' + (err.message || ''), 'error'); } }
 
 // ═══════════════════════════════════════════════════════════════════════
 // FACTURES VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderFactures() {
-  const factures = await api.getFactures();
+  let factures = [];
+  try { const r = await api.getFactures(); factures = Array.isArray(r) ? r : []; } catch(e) { console.error('Factures error:', e); }
   return `
   <div class="animate-slide-up">
     <div class="flex items-center justify-between mb-6">
