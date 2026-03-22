@@ -1107,32 +1107,21 @@ function profileAction(action) {
   switch (action) {
     case 'profil':      navigate('profil'); break;
     case 'parametres':  navigate('parametres'); break;
-    case 'deconnexion': logout(); break;
+    case 'deconnexion': signOut(); break; // calls supabase-auth.js signOut()
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// AUTHENTICATION (Mock)
+// AUTHENTICATION — powered by Supabase (see supabase-auth.js)
 // ═══════════════════════════════════════════════════════════════════════
 function checkAuth() {
-  return localStorage.getItem('freelance_auth') === 'true';
-}
-
-function login(e) {
-  e.preventDefault();
-  localStorage.setItem('freelance_auth', 'true');
-  window.location.hash = 'dashboard';
-  checkLayout();
-  navigate('dashboard');
-  toast('Bienvenue, Freelancer !');
+  // Auth is handled by the guard in index.html (requireSession)
+  // If we're here, the user is already authenticated
+  return true;
 }
 
 function logout() {
-  localStorage.removeItem('freelance_auth');
-  window.location.hash = 'login';
-  checkLayout();
-  navigate('login');
-  toast('Vous êtes déconnecté', 'info');
+  signOut(); // from supabase-auth.js — clears session + redirects to /login.html
 }
 
 function checkLayout() {
