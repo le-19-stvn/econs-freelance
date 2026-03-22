@@ -11,13 +11,16 @@
       theme: {
         extend: {
           colors: {
-            'navy': { 800: '#0c1425', 900: '#080e1c', 950: '#040714' },
+            'navy': { 800: '#0c1425', 900: '#080e1c', 950: '#050505' },
             'electric': { DEFAULT: '#3366FF', light: '#5b8aff' },
             'accent-cyan': '#00D4FF',
             'accent-green': '#10B981',
-            'accent-red': '#EF4444',
+            'accent-red': '#FF0000',
           },
-          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          fontFamily: { 
+            inter: ['Inter', 'sans-serif'],
+            swiss: ['"Helvetica Neue LT 75 Bold"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+          },
         },
       },
     };
@@ -56,6 +59,14 @@
     .glow {
       animation: glow 3s ease-in-out infinite
     }
+
+    /* Swiss Typography */
+    .swiss-title {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+    }
   </style>
 </head>
 
@@ -71,32 +82,33 @@
   <div class="relative z-10 w-full max-w-md mx-4">
 
     <!-- Logo -->
-    <div class="flex flex-col items-center mb-8 float">
-      <img src="/logo_freelance.png" alt="eCons Freelance"
-        class="w-16 h-16 object-contain rounded-2xl shadow-lg shadow-blue-500/20 mb-4">
-      <h1 class="text-2xl font-bold text-white/90">eCons Freelance</h1>
-      <p class="text-sm text-white/40 mt-1">Gérez vos clients, projets et factures</p>
+    <div class="flex flex-col items-center mb-10 float">
+      <div class="w-20 h-20 bg-electric flex items-center justify-center rounded-xl shadow-lg border border-white/[0.2] mb-6 relative group">
+        <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </div>
+      <h1 class="swiss-title text-5xl text-white mb-2 tracking-tighter">eCons Freelance</h1>
+      <p class="text-xs text-white/40 font-swiss uppercase tracking-widest mt-2">Gérez clients, projets et factures</p>
     </div>
 
-    <div class="bg-white/[0.04] backdrop-blur-xl border border-white/[0.07] rounded-3xl p-8 shadow-2xl">
+    <div class="bg-white/[0.03] backdrop-blur-xl border border-white/[0.1] rounded-xl p-8 shadow-2xl">
 
       <!-- ========== TABS ========== -->
-      <div class="flex mb-6 bg-white/[0.04] rounded-2xl p-1" id="auth-tabs">
+      <div class="flex mb-6 bg-white/[0.03] border border-white/[0.1] rounded-lg p-1" id="auth-tabs">
         <button type="button" id="tab-login"
-          style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .3s;background:rgba(51,102,255,.2);color:#5b8aff;">
+          style="flex:1;padding:12px 0;border-radius:6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;font-family:Helvetica,sans-serif;font-weight:700;cursor:pointer;border:none;transition:all .3s;background:#3366FF;color:#FFF;">
           Connexion
         </button>
         <button type="button" id="tab-register"
-          style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .3s;background:transparent;color:rgba(255,255,255,.4);">
+          style="flex:1;padding:12px 0;border-radius:6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;font-family:Helvetica,sans-serif;font-weight:700;cursor:pointer;border:none;transition:all .3s;background:transparent;color:rgba(255,255,255,.4);">
           Inscription
         </button>
       </div>
 
       <!-- ========== GOOGLE BUTTON ========== -->
       <button type="button" id="btn-google"
-        style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);cursor:pointer;margin-bottom:20px;transition:all .3s;"
-        onmouseover="this.style.background='rgba(255,255,255,.12)'"
-        onmouseout="this.style.background='rgba(255,255,255,.06)'">
+        style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);cursor:pointer;margin-bottom:24px;transition:all .3s;font-family:Helvetica,sans-serif;font-weight:700;font-size:13px;color:#FFF"
+        onmouseover="this.style.background='rgba(255,255,255,.08)'"
+        onmouseout="this.style.background='rgba(255,255,255,.03)'">
         <svg width="20" height="20" viewBox="0 0 24 24">
           <path
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"

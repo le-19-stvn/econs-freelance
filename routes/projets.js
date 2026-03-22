@@ -9,8 +9,9 @@ router.get('/', async (req, res) => {
       SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
       FROM "Projet" p
       JOIN "Client" c ON c.id = p.client_id
+      WHERE p.user_id = $1
       ORDER BY p.id DESC
-    `);
+    `, [req.userId]);
 
     const enriched = [];
     for (const p of projets) {
@@ -35,8 +36,8 @@ router.get('/:id', async (req, res) => {
       SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
       FROM "Projet" p
       JOIN "Client" c ON c.id = p.client_id
-      WHERE p.id = $1
-    `, [req.params.id]);
+      WHERE p.id = $1 AND p.user_id = $2
+    `, [req.params.id, req.userId]);
 
     if (!projet) return res.status(404).json({ error: 'Projet introuvable' });
 
@@ -61,14 +62,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Les champs "client_id" et "nom_projet" sont obligatoires.' });
     }
 
-    const client = await queryOne('SELECT id FROM "Client" WHERE id = $1', [client_id]);
+    const client = await queryOne('SELECT id FROM "Client" WHERE id = $1 AND user_id = $2', [client_id, req.userId]);
     if (!client) return res.status(404).json({ error: 'Client introuvable' });
 
     const budgetCents = toCents(budget_euros || 0);
 
     const { lastId } = await runSql(
-      'INSERT INTO "Projet" (client_id, nom_projet, statut, date_limite, budget) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [client_id, nom_projet, 'En cours', date_limite || null, budgetCents]
+      'INSERT INTO "Projet" (user_id, client_id, nom_projet, statut, date_limite, budget) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [req.userId, client_id, nom_projet, 'En cours', date_limite || null, budgetCents]
     );
 
     const projet = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [lastId]);
@@ -81,7 +82,7 @@ router.post('/', async (req, res) => {
 // ── PUT /api/projets/:id ────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [req.params.id]);
+    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
     if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
 
     const { nom_projet, statut, date_limite, client_id, budget_euros } = req.body;
@@ -94,7 +95,7 @@ router.put('/:id', async (req, res) => {
     const budgetCents = budget_euros !== undefined ? toCents(budget_euros) : existing.budget;
 
     await runSql(
-      'UPDATE "Projet" SET client_id = $1, nom_projet = $2, statut = $3, date_limite = $4, budget = $5 WHERE id = $6',
+      'UPDATE "Projet" SET client_id = $1, nom_projet = $2, statut = $3, date_limite = $4, budget = $5 WHERE id = $6 AND user_id = $7',
       [
         client_id ?? existing.client_id,
         nom_projet ?? existing.nom_projet,
@@ -102,6 +103,7 @@ router.put('/:id', async (req, res) => {
         date_limite ?? existing.date_limite,
         budgetCents,
         req.params.id,
+        req.userId,
       ]
     );
 
@@ -121,10 +123,10 @@ router.put('/:id', async (req, res) => {
 // ── DELETE /api/projets/:id ─────────────────────────────────────────
 router.delete('/:id', async (req, res) => {
   try {
-    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [req.params.id]);
+    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
     if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
 
-    await runSql('DELETE FROM "Projet" WHERE id = $1', [req.params.id]);
+    await runSql('DELETE FROM "Projet" WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
     res.json({ message: 'Projet supprimé', id: Number(req.params.id) });
   } catch (err) {
     res.status(500).json({ error: err.message });

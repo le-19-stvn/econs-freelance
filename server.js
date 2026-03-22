@@ -44,6 +44,7 @@ app.get('/api/config', (req, res) => {
 app.use('/api/clients', requireAuth, require('./routes/clients'));
 app.use('/api/projets', requireAuth, require('./routes/projets'));
 app.use('/api/factures', requireAuth, require('./routes/factures'));
+app.use('/api/profil', requireAuth, require('./routes/profil'));
 
 // ── Gestion d'erreur globale (catch-all) ────────────────────────────
 app.use((err, req, res, next) => {

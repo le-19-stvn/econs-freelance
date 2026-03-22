@@ -17,6 +17,7 @@
         extend: {
           fontFamily: {
             inter: ['Inter', 'system-ui', 'sans-serif'],
+            swiss: ['"Helvetica Neue LT 75 Bold"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
           },
           colors: {
             navy: {
@@ -71,6 +72,21 @@
       },
     }
   </script>
+  <style>
+    /* Swiss Typography Base Options */
+    .swiss-title {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+    }
+    .glass-card {
+      background-color: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>

@@ -172,4 +172,22 @@ const api = {
       return { status: res.status, data: await safeJson(res, {}) };
     } catch (e) { return { status: 0, data: { error: e.message } }; }
   },
+
+  // ── Profil ─────────────────────────────────────────────────────────
+  async getProfil() {
+    try {
+      const res = await fetch(`${API_BASE}/profil`, { headers: await authHeaders() });
+      if (!res.ok) return null;
+      return await safeJson(res, null);
+    } catch (e) { return null; }
+  },
+
+  async saveProfil(data) {
+    try {
+      const res = await fetch(`${API_BASE}/profil`, {
+        method: 'POST', headers: await authHeaders(), body: JSON.stringify(data),
+      });
+      return { status: res.status, data: await safeJson(res, {}) };
+    } catch (e) { return { status: 0, data: { error: e.message } }; }
+  },
 };

@@ -8,12 +8,11 @@ const pool = new Pool({
   ssl: connectionString && connectionString.includes('supabase.co')
     ? { rejectUnauthorized: false }
     : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false),
-  connectionTimeoutMillis: 10000,  // 10s max pour se connecter
+  connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
   max: 10,
 });
 
-// Gestion propre des erreurs de pool
 pool.on('error', (err) => {
   console.error('⚠️ Erreur inattendue du pool PostgreSQL :', err.message);
 });
@@ -30,6 +29,7 @@ async function initDatabase(retries = 3, delay = 2000) {
         await client.query(`
           CREATE TABLE IF NOT EXISTS "Client" (
             id            SERIAL PRIMARY KEY,
+            user_id       UUID    NOT NULL,
             nom           TEXT    NOT NULL,
             contact_email TEXT    NOT NULL,
             id_fiscal     TEXT    DEFAULT ''
@@ -39,6 +39,7 @@ async function initDatabase(retries = 3, delay = 2000) {
         await client.query(`
           CREATE TABLE IF NOT EXISTS "Projet" (
             id          SERIAL PRIMARY KEY,
+            user_id     UUID    NOT NULL,
             client_id   INTEGER NOT NULL REFERENCES "Client"(id) ON DELETE CASCADE,
             nom_projet  TEXT    NOT NULL,
             statut      TEXT    NOT NULL DEFAULT 'En cours'
@@ -51,6 +52,7 @@ async function initDatabase(retries = 3, delay = 2000) {
         await client.query(`
           CREATE TABLE IF NOT EXISTS "Facture" (
             id              SERIAL PRIMARY KEY,
+            user_id         UUID    NOT NULL,
             client_id       INTEGER NOT NULL REFERENCES "Client"(id) ON DELETE CASCADE,
             projet_id       INTEGER NOT NULL REFERENCES "Projet"(id) ON DELETE CASCADE,
             numero_facture  TEXT    NOT NULL UNIQUE,
@@ -75,13 +77,30 @@ async function initDatabase(retries = 3, delay = 2000) {
           )
         `);
 
-        // Migration : ajouter budget si absent
-        try {
-          await client.query(`ALTER TABLE "Projet" ADD COLUMN IF NOT EXISTS budget INTEGER NOT NULL DEFAULT 0`);
-        } catch (err) { /* colonne déjà existante */ }
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "Profil" (
+            user_id UUID PRIMARY KEY,
+            nom TEXT,
+            email TEXT,
+            metier TEXT,
+            bio TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // Migrations : ajouter les colonnes si manquantes
+        const migrations = [
+          `ALTER TABLE "Projet" ADD COLUMN IF NOT EXISTS budget INTEGER NOT NULL DEFAULT 0`,
+          `ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS user_id UUID`,
+          `ALTER TABLE "Projet" ADD COLUMN IF NOT EXISTS user_id UUID`,
+          `ALTER TABLE "Facture" ADD COLUMN IF NOT EXISTS user_id UUID`,
+        ];
+        for (const sql of migrations) {
+          try { await client.query(sql); } catch (e) { /* colonne déjà existante */ }
+        }
 
         console.log('✅ Tables PostgreSQL créées / vérifiées');
-        return; // Succès → sortir de la boucle
+        return;
       } finally {
         client.release();
       }
@@ -90,7 +109,6 @@ async function initDatabase(retries = 3, delay = 2000) {
       if (attempt === retries) {
         throw new Error(`Impossible de se connecter à PostgreSQL après ${retries} tentatives : ${err.message}`);
       }
-      // Attente exponentielle avant le prochain essai
       await new Promise(resolve => setTimeout(resolve, delay * attempt));
     }
   }
@@ -98,26 +116,16 @@ async function initDatabase(retries = 3, delay = 2000) {
 
 // ── Wrappers async pour PostgreSQL ──────────────────────────────────
 
-/**
- * Exécute un SELECT et retourne toutes les lignes en objets JS.
- */
 async function queryAll(sql, params = []) {
   const result = await pool.query(sql, params);
   return result.rows;
 }
 
-/**
- * Exécute un SELECT et retourne la première ligne (ou null).
- */
 async function queryOne(sql, params = []) {
   const result = await pool.query(sql, params);
   return result.rows.length > 0 ? result.rows[0] : null;
 }
 
-/**
- * Exécute un INSERT/UPDATE/DELETE et retourne { lastId, changes }.
- * Pour les INSERT, ajoutez RETURNING id à la fin de votre requête.
- */
 async function runSql(sql, params = []) {
   const result = await pool.query(sql, params);
   const lastId = result.rows?.[0]?.id || 0;
@@ -125,21 +133,16 @@ async function runSql(sql, params = []) {
   return { lastId, changes };
 }
 
-// ── Helpers de conversion centimes ↔ euros ──────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────
 
-/** Convertit des euros (nombre décimal) en centimes (entier). */
 function toCents(euros) {
   return Math.round(Number(euros) * 100);
 }
 
-/** Convertit des centimes (entier) en euros (nombre décimal). */
 function toEuros(cents) {
   return Number(cents) / 100;
 }
 
-/**
- * Formate un objet facture pour l'API / futur PDF.
- */
 function formatFactureForApi(facture) {
   if (!facture) return null;
   return {
@@ -150,9 +153,6 @@ function formatFactureForApi(facture) {
   };
 }
 
-/**
- * Formate une ligne de service pour l'API / futur PDF.
- */
 function formatLigneForApi(ligne) {
   if (!ligne) return null;
   const montant = Math.round(Number(ligne.quantite) * Number(ligne.prix_unitaire));
