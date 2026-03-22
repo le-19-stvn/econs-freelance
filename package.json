@@ -5,11 +5,15 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
+    "start": "node server.js",
     "test": "node test/test-api.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.0",
-    "sql.js": "^1.11.0"
+    "pg": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

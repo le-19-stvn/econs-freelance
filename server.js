@@ -23,10 +23,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erreur interne du serveur', details: err.message });
 });
 
-// ── Démarrage asynchrone (sql.js est async) ─────────────────────────
+// ── Démarrage asynchrone ────────────────────────────────────────────
 async function start() {
   await initDatabase();
-  console.log('✅ Base de données initialisée');
+  console.log('✅ Base de données PostgreSQL initialisée');
 
   app.listen(PORT, () => {
     console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
