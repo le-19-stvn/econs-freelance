@@ -183,11 +183,15 @@
     // Initialise le client Supabase
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Vérifie si déjà connecté → redirige
-    (async () => {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) window.location.href = '/';
-    })();
+    // Vérifie si déjà connecté → redirige (attend le chargement réel de la session)
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' && session) {
+        window.location.href = '/';
+      }
+      if (event === 'SIGNED_IN' && session) {
+        window.location.href = '/';
+      }
+    });
 
     // ── État : login ou register ────────────────────────────────
     let mode = 'login'; // 'login' ou 'register'
