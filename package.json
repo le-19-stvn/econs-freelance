@@ -1,0 +1,15 @@
+{
+  "name": "antigravity-freelance-mvp",
+  "version": "1.0.0",
+  "description": "MVP backend pour freelances — Clients, Projets, Factures",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "test": "node test/test-api.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "sql.js": "^1.11.0"
+  }
+}
