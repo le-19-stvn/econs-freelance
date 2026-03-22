@@ -3,111 +3,132 @@ const router = express.Router();
 const { queryAll, queryOne, runSql, toCents, toEuros } = require('../db/database');
 
 // ── GET /api/projets ────────────────────────────────────────────────
-router.get('/', (req, res) => {
-  const projets = queryAll(`
-    SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
-    FROM Projet p
-    JOIN Client c ON c.id = p.client_id
-    ORDER BY p.id DESC
-  `);
+router.get('/', async (req, res) => {
+  try {
+    const projets = await queryAll(`
+      SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
+      FROM "Projet" p
+      JOIN "Client" c ON c.id = p.client_id
+      ORDER BY p.id DESC
+    `);
 
-  const enriched = projets.map(p => {
-    const hasFacture = queryOne('SELECT 1 AS ok FROM Facture WHERE projet_id = ?', [p.id]);
-    return {
-      ...p,
-      budget_euros: toEuros(p.budget),
-      peut_generer_facture: p.statut === 'Terminé' && !hasFacture,
-    };
-  });
+    const enriched = [];
+    for (const p of projets) {
+      const hasFacture = await queryOne('SELECT 1 AS ok FROM "Facture" WHERE projet_id = $1', [p.id]);
+      enriched.push({
+        ...p,
+        budget_euros: toEuros(p.budget),
+        peut_generer_facture: p.statut === 'Terminé' && !hasFacture,
+      });
+    }
 
-  res.json(enriched);
+    res.json(enriched);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── GET /api/projets/:id ────────────────────────────────────────────
-router.get('/:id', (req, res) => {
-  const projet = queryOne(`
-    SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
-    FROM Projet p
-    JOIN Client c ON c.id = p.client_id
-    WHERE p.id = ?
-  `, [req.params.id]);
+router.get('/:id', async (req, res) => {
+  try {
+    const projet = await queryOne(`
+      SELECT p.*, c.nom AS client_nom, c.contact_email AS client_email
+      FROM "Projet" p
+      JOIN "Client" c ON c.id = p.client_id
+      WHERE p.id = $1
+    `, [req.params.id]);
 
-  if (!projet) return res.status(404).json({ error: 'Projet introuvable' });
+    if (!projet) return res.status(404).json({ error: 'Projet introuvable' });
 
-  const hasFacture = queryOne('SELECT 1 AS ok FROM Facture WHERE projet_id = ?', [projet.id]);
+    const hasFacture = await queryOne('SELECT 1 AS ok FROM "Facture" WHERE projet_id = $1', [projet.id]);
 
-  res.json({
-    ...projet,
-    budget_euros: toEuros(projet.budget),
-    peut_generer_facture: projet.statut === 'Terminé' && !hasFacture,
-  });
+    res.json({
+      ...projet,
+      budget_euros: toEuros(projet.budget),
+      peut_generer_facture: projet.statut === 'Terminé' && !hasFacture,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── POST /api/projets ───────────────────────────────────────────────
-router.post('/', (req, res) => {
-  const { client_id, nom_projet, date_limite, budget_euros } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const { client_id, nom_projet, date_limite, budget_euros } = req.body;
 
-  if (!client_id || !nom_projet) {
-    return res.status(400).json({ error: 'Les champs "client_id" et "nom_projet" sont obligatoires.' });
+    if (!client_id || !nom_projet) {
+      return res.status(400).json({ error: 'Les champs "client_id" et "nom_projet" sont obligatoires.' });
+    }
+
+    const client = await queryOne('SELECT id FROM "Client" WHERE id = $1', [client_id]);
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const budgetCents = toCents(budget_euros || 0);
+
+    const { lastId } = await runSql(
+      'INSERT INTO "Projet" (client_id, nom_projet, statut, date_limite, budget) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [client_id, nom_projet, 'En cours', date_limite || null, budgetCents]
+    );
+
+    const projet = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [lastId]);
+    res.status(201).json({ ...projet, budget_euros: toEuros(projet.budget), peut_generer_facture: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  const client = queryOne('SELECT id FROM Client WHERE id = ?', [client_id]);
-  if (!client) return res.status(404).json({ error: 'Client introuvable' });
-
-  const budgetCents = toCents(budget_euros || 0);
-
-  const { lastId } = runSql(
-    'INSERT INTO Projet (client_id, nom_projet, statut, date_limite, budget) VALUES (?, ?, ?, ?, ?)',
-    [client_id, nom_projet, 'En cours', date_limite || null, budgetCents]
-  );
-
-  const projet = queryOne('SELECT * FROM Projet WHERE id = ?', [lastId]);
-  res.status(201).json({ ...projet, budget_euros: toEuros(projet.budget), peut_generer_facture: false });
 });
 
 // ── PUT /api/projets/:id ────────────────────────────────────────────
-router.put('/:id', (req, res) => {
-  const existing = queryOne('SELECT * FROM Projet WHERE id = ?', [req.params.id]);
-  if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
+router.put('/:id', async (req, res) => {
+  try {
+    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
 
-  const { nom_projet, statut, date_limite, client_id, budget_euros } = req.body;
+    const { nom_projet, statut, date_limite, client_id, budget_euros } = req.body;
 
-  const newStatut = statut ?? existing.statut;
-  if (!['En cours', 'Terminé'].includes(newStatut)) {
-    return res.status(400).json({ error: 'Statut invalide. Valeurs acceptées : "En cours", "Terminé".' });
+    const newStatut = statut ?? existing.statut;
+    if (!['En cours', 'Terminé'].includes(newStatut)) {
+      return res.status(400).json({ error: 'Statut invalide. Valeurs acceptées : "En cours", "Terminé".' });
+    }
+
+    const budgetCents = budget_euros !== undefined ? toCents(budget_euros) : existing.budget;
+
+    await runSql(
+      'UPDATE "Projet" SET client_id = $1, nom_projet = $2, statut = $3, date_limite = $4, budget = $5 WHERE id = $6',
+      [
+        client_id ?? existing.client_id,
+        nom_projet ?? existing.nom_projet,
+        newStatut,
+        date_limite ?? existing.date_limite,
+        budgetCents,
+        req.params.id,
+      ]
+    );
+
+    const updated = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [req.params.id]);
+    const hasFacture = await queryOne('SELECT 1 AS ok FROM "Facture" WHERE projet_id = $1', [updated.id]);
+
+    res.json({
+      ...updated,
+      budget_euros: toEuros(updated.budget),
+      peut_generer_facture: updated.statut === 'Terminé' && !hasFacture,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  const budgetCents = budget_euros !== undefined ? toCents(budget_euros) : existing.budget;
-
-  runSql(
-    'UPDATE Projet SET client_id = ?, nom_projet = ?, statut = ?, date_limite = ?, budget = ? WHERE id = ?',
-    [
-      client_id ?? existing.client_id,
-      nom_projet ?? existing.nom_projet,
-      newStatut,
-      date_limite ?? existing.date_limite,
-      budgetCents,
-      req.params.id,
-    ]
-  );
-
-  const updated = queryOne('SELECT * FROM Projet WHERE id = ?', [req.params.id]);
-  const hasFacture = queryOne('SELECT 1 AS ok FROM Facture WHERE projet_id = ?', [updated.id]);
-
-  res.json({
-    ...updated,
-    budget_euros: toEuros(updated.budget),
-    peut_generer_facture: updated.statut === 'Terminé' && !hasFacture,
-  });
 });
 
 // ── DELETE /api/projets/:id ─────────────────────────────────────────
-router.delete('/:id', (req, res) => {
-  const existing = queryOne('SELECT * FROM Projet WHERE id = ?', [req.params.id]);
-  if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
+router.delete('/:id', async (req, res) => {
+  try {
+    const existing = await queryOne('SELECT * FROM "Projet" WHERE id = $1', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Projet introuvable' });
 
-  runSql('DELETE FROM Projet WHERE id = ?', [req.params.id]);
-  res.json({ message: 'Projet supprimé', id: Number(req.params.id) });
+    await runSql('DELETE FROM "Projet" WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Projet supprimé', id: Number(req.params.id) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
