@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initDatabase } = require('./db/database');
+const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,11 +12,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Routes API ──────────────────────────────────────────────────────
-app.use('/api/clients', require('./routes/clients'));
-app.use('/api/projets', require('./routes/projets'));
-app.use('/api/factures', require('./routes/factures'));
-app.use('/api', require('./routes/factures'));
+// ── Config endpoint (public — pour le client Supabase frontend) ─────
+app.get('/api/config', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+  });
+});
+
+// ── Routes API protégées ────────────────────────────────────────────
+app.use('/api/clients', requireAuth, require('./routes/clients'));
+app.use('/api/projets', requireAuth, require('./routes/projets'));
+app.use('/api/factures', requireAuth, require('./routes/factures'));
+app.use('/api', requireAuth, require('./routes/factures'));
 
 // ── Gestion d'erreur globale ────────────────────────────────────────
 app.use((err, req, res, next) => {
