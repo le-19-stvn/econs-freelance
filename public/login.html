@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>eCons Freelance — Connexion</title>
-  <meta name="description" content="Connectez-vous à votre espace eCons Freelance pour gérer vos clients, projets et factures.">
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,292 +22,261 @@
     };
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
-    @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 20px rgba(51,102,255,0.3); } 50% { box-shadow: 0 0 40px rgba(51,102,255,0.6); } }
-    .animate-float { animation: float 6s ease-in-out infinite; }
-    .animate-glow { animation: glow-pulse 3s ease-in-out infinite; }
-    /* Fix: explicit pointer & styling for tabs to guarantee clickability */
-    .auth-tab { cursor: pointer; user-select: none; position: relative; z-index: 10; }
-    .auth-tab-active { background: rgba(51,102,255,0.2); color: #5b8aff; }
-    .auth-tab-active-cyan { background: rgba(0,212,255,0.2); color: #00D4FF; }
-    .auth-tab-inactive { color: rgba(255,255,255,0.4); }
-    .auth-tab-inactive:hover { color: rgba(255,255,255,0.6); }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(51,102,255,.3)} 50%{box-shadow:0 0 40px rgba(51,102,255,.6)} }
+    .float{animation:float 6s ease-in-out infinite}
+    .glow{animation:glow 3s ease-in-out infinite}
   </style>
 </head>
 <body class="bg-navy-950 text-white font-inter min-h-screen flex items-center justify-center relative overflow-hidden">
 
-  <!-- Background decorations -->
-  <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
-    <div class="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] bg-electric/5 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] bg-accent-cyan/5 rounded-full blur-3xl"></div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-electric/[0.02] rounded-full blur-3xl"></div>
+  <!-- BG blurs -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute -top-52 -left-52 w-[600px] h-[600px] bg-electric/5 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-52 -right-52 w-[500px] h-[500px] bg-accent-cyan/5 rounded-full blur-3xl"></div>
   </div>
 
-  <!-- Login Card -->
+  <!-- Card -->
   <div class="relative z-10 w-full max-w-md mx-4">
+
     <!-- Logo -->
-    <div class="flex flex-col items-center mb-8 animate-float">
+    <div class="flex flex-col items-center mb-8 float">
       <img src="/logo_freelance.png" alt="eCons Freelance" class="w-16 h-16 object-contain rounded-2xl shadow-lg shadow-blue-500/20 mb-4">
       <h1 class="text-2xl font-bold text-white/90">eCons Freelance</h1>
       <p class="text-sm text-white/40 mt-1">Gérez vos clients, projets et factures</p>
     </div>
 
-    <!-- Card -->
     <div class="bg-white/[0.04] backdrop-blur-xl border border-white/[0.07] rounded-3xl p-8 shadow-2xl">
 
-      <!-- Tabs — using explicit styles for guaranteed clickability -->
-      <div class="flex mb-6 bg-white/[0.04] rounded-2xl p-1">
-        <button type="button" id="tab-login" class="auth-tab auth-tab-active flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300">
+      <!-- ========== TABS ========== -->
+      <div class="flex mb-6 bg-white/[0.04] rounded-2xl p-1" id="auth-tabs">
+        <button type="button" id="tab-login"
+          style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .3s;background:rgba(51,102,255,.2);color:#5b8aff;">
           Connexion
         </button>
-        <button type="button" id="tab-register" class="auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300">
+        <button type="button" id="tab-register"
+          style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .3s;background:transparent;color:rgba(255,255,255,.4);">
           Inscription
         </button>
       </div>
 
-      <!-- Google OAuth -->
-      <button type="button" id="btn-google" class="w-full flex items-center justify-center gap-3 bg-white/[0.06] border border-white/[0.1] rounded-2xl px-6 py-3 hover:bg-white/[0.12] hover:border-white/[0.2] transition-all duration-300 active:scale-[0.97] mb-5 group cursor-pointer">
-        <svg class="w-5 h-5" viewBox="0 0 24 24">
+      <!-- ========== GOOGLE BUTTON ========== -->
+      <button type="button" id="btn-google"
+        style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);cursor:pointer;margin-bottom:20px;transition:all .3s;"
+        onmouseover="this.style.background='rgba(255,255,255,.12)'"
+        onmouseout="this.style.background='rgba(255,255,255,.06)'">
+        <svg width="20" height="20" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        <span class="text-sm font-medium text-white/70 group-hover:text-white transition-colors">Continuer avec Google</span>
+        <span style="font-size:14px;font-weight:500;color:rgba(255,255,255,.7);">Continuer avec Google</span>
       </button>
 
       <!-- Divider -->
-      <div class="flex items-center gap-3 mb-5">
-        <div class="flex-1 h-px bg-white/[0.08]"></div>
-        <span class="text-xs text-white/30">ou par email</span>
-        <div class="flex-1 h-px bg-white/[0.08]"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.08);"></div>
+        <span style="font-size:12px;color:rgba(255,255,255,.3);">ou par email</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.08);"></div>
       </div>
 
-      <!-- Error / Success messages -->
-      <div id="auth-error" class="hidden mb-4 px-4 py-3 rounded-2xl bg-accent-red/10 border border-accent-red/20 text-accent-red text-sm"></div>
-      <div id="auth-success" class="hidden mb-4 px-4 py-3 rounded-2xl bg-accent-green/10 border border-accent-green/20 text-accent-green text-sm"></div>
+      <!-- ========== ALERT MESSAGES ========== -->
+      <div id="msg-error" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:16px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#EF4444;font-size:14px;"></div>
+      <div id="msg-success" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#10B981;font-size:14px;"></div>
 
-      <!-- ====== LOGIN FORM ====== -->
-      <form id="form-login" class="space-y-5">
-        <div>
-          <label class="block text-sm font-medium text-white/60 mb-1.5">Email</label>
-          <input type="email" id="login-email" required placeholder="freelance@email.com"
-            class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
+      <!-- ========== SINGLE FORM ========== -->
+      <form id="auth-form">
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:6px;">Email</label>
+          <input type="email" id="input-email" required placeholder="freelance@email.com"
+            style="width:100%;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='rgba(51,102,255,.5)';this.style.background='rgba(255,255,255,.08)'"
+            onblur="this.style.borderColor='rgba(255,255,255,.1)';this.style.background='rgba(255,255,255,.05)'">
         </div>
-        <div>
-          <label class="block text-sm font-medium text-white/60 mb-1.5">Mot de passe</label>
-          <input type="password" id="login-password" required placeholder="••••••••" minlength="6"
-            class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:6px;">Mot de passe</label>
+          <input type="password" id="input-password" required placeholder="••••••••" minlength="6"
+            style="width:100%;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='rgba(51,102,255,.5)';this.style.background='rgba(255,255,255,.08)'"
+            onblur="this.style.borderColor='rgba(255,255,255,.1)';this.style.background='rgba(255,255,255,.05)'">
         </div>
-        <button type="submit" id="btn-login" class="w-full bg-gradient-to-r from-electric to-electric-light text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(51,102,255,0.45)] transition-all duration-300 active:scale-[0.97] animate-glow cursor-pointer">
+        <!-- Confirm password — visible only in register mode -->
+        <div id="confirm-row" style="display:none;margin-bottom:16px;">
+          <label style="display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:6px;">Confirmer le mot de passe</label>
+          <input type="password" id="input-confirm" placeholder="••••••••" minlength="6"
+            style="width:100%;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='rgba(51,102,255,.5)';this.style.background='rgba(255,255,255,.08)'"
+            onblur="this.style.borderColor='rgba(255,255,255,.1)';this.style.background='rgba(255,255,255,.05)'">
+        </div>
+        <button type="submit" id="btn-submit"
+          style="width:100%;padding:12px;border-radius:16px;border:none;font-size:14px;font-weight:600;color:#fff;cursor:pointer;background:linear-gradient(to right,#3366FF,#5b8aff);transition:all .3s;"
+          class="glow">
           Se connecter
-        </button>
-      </form>
-
-      <!-- ====== REGISTER FORM (hidden by default) ====== -->
-      <form id="form-register" class="space-y-5" style="display:none;">
-        <div>
-          <label class="block text-sm font-medium text-white/60 mb-1.5">Email</label>
-          <input type="email" id="register-email" required placeholder="freelance@email.com"
-            class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-white/60 mb-1.5">Mot de passe</label>
-          <input type="password" id="register-password" required placeholder="Minimum 6 caractères" minlength="6"
-            class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-white/60 mb-1.5">Confirmer le mot de passe</label>
-          <input type="password" id="register-confirm" required placeholder="••••••••" minlength="6"
-            class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
-        </div>
-        <button type="submit" id="btn-register" class="w-full bg-gradient-to-r from-accent-cyan to-electric text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(0,212,255,0.35)] transition-all duration-300 active:scale-[0.97] cursor-pointer">
-          Créer mon compte
         </button>
       </form>
     </div>
 
-    <p class="text-center text-white/20 text-xs mt-6">eCons Freelance — Dashboard Freelance</p>
+    <p style="text-align:center;color:rgba(255,255,255,.2);font-size:12px;margin-top:24px;">eCons Freelance — Dashboard Freelance</p>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- JAVASCRIPT — TOUT LE CÂBLAGE                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    let supabaseClient = null;
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │  🔑  MES CLÉS SUPABASE (à remplacer par les tiennes)       │
+    // └─────────────────────────────────────────────────────────────┘
+    const SUPABASE_URL = 'https://witaufezvdbjuweqgnzn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpdGF1ZmV6dmRianV3ZXFnbnpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTQwNzAsImV4cCI6MjA4OTc3MDA3MH0.lhI0QkWxZTFgW2TUzpHzyaSeONULBrEGYJY40R9DJ34';
 
-    // ── Initialize Supabase ──────────────────────────────────────────
-    async function initSupabase() {
-      try {
-        const res = await fetch('/api/config');
-        const config = await res.json();
-        if (config.supabaseUrl && config.supabaseAnonKey) {
-          supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-          const { data: { session } } = await supabaseClient.auth.getSession();
-          if (session) {
-            window.location.href = '/';
-          }
-        } else {
-          showError('Configuration Supabase manquante. Contactez l\'administrateur.');
-        }
-      } catch (e) {
-        showError('Impossible de charger la configuration.');
-      }
-    }
+    // Initialise le client Supabase
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ── Tab switching (Connexion ↔ Inscription) ─────────────────────
-    const tabLogin = document.getElementById('tab-login');
+    // Vérifie si déjà connecté → redirige
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) window.location.href = '/';
+    })();
+
+    // ── État : login ou register ────────────────────────────────
+    let mode = 'login'; // 'login' ou 'register'
+
+    // Références DOM
+    const tabLogin    = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
-    const formLogin = document.getElementById('form-login');
-    const formRegister = document.getElementById('form-register');
+    const confirmRow  = document.getElementById('confirm-row');
+    const btnSubmit   = document.getElementById('btn-submit');
+    const form        = document.getElementById('auth-form');
+    const msgError    = document.getElementById('msg-error');
+    const msgSuccess  = document.getElementById('msg-success');
 
-    tabLogin.addEventListener('click', function() {
+    // ── TAB SWITCHING ───────────────────────────────────────────
+    tabLogin.addEventListener('click', function () {
+      mode = 'login';
+      // Style tabs
+      tabLogin.style.background  = 'rgba(51,102,255,.2)';
+      tabLogin.style.color       = '#5b8aff';
+      tabRegister.style.background = 'transparent';
+      tabRegister.style.color      = 'rgba(255,255,255,.4)';
+      // Hide confirm, change button text
+      confirmRow.style.display = 'none';
+      btnSubmit.textContent    = 'Se connecter';
+      btnSubmit.style.background = 'linear-gradient(to right,#3366FF,#5b8aff)';
       hideMessages();
-      // Activate login tab
-      tabLogin.className = 'auth-tab auth-tab-active flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
-      tabRegister.className = 'auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
-      // Show login, hide register
-      formLogin.style.display = '';
-      formRegister.style.display = 'none';
     });
 
-    tabRegister.addEventListener('click', function() {
+    tabRegister.addEventListener('click', function () {
+      mode = 'register';
+      // Style tabs
+      tabRegister.style.background = 'rgba(0,212,255,.2)';
+      tabRegister.style.color      = '#00D4FF';
+      tabLogin.style.background    = 'transparent';
+      tabLogin.style.color         = 'rgba(255,255,255,.4)';
+      // Show confirm, change button text
+      confirmRow.style.display = 'block';
+      btnSubmit.textContent    = 'Créer mon compte';
+      btnSubmit.style.background = 'linear-gradient(to right,#00D4FF,#3366FF)';
       hideMessages();
-      // Activate register tab
-      tabRegister.className = 'auth-tab auth-tab-active-cyan flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
-      tabLogin.className = 'auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
-      // Show register, hide login
-      formRegister.style.display = '';
-      formLogin.style.display = 'none';
     });
 
-    // ── Messages ────────────────────────────────────────────────────
-    function showError(msg) {
-      const el = document.getElementById('auth-error');
-      el.textContent = msg;
-      el.style.display = 'block';
-      document.getElementById('auth-success').style.display = 'none';
+    // ── MESSAGES ────────────────────────────────────────────────
+    function showError(txt) {
+      msgError.textContent   = txt;
+      msgError.style.display = 'block';
+      msgSuccess.style.display = 'none';
     }
-
-    function showSuccess(msg) {
-      const el = document.getElementById('auth-success');
-      el.textContent = msg;
-      el.style.display = 'block';
-      document.getElementById('auth-error').style.display = 'none';
+    function showSuccess(txt) {
+      msgSuccess.textContent   = txt;
+      msgSuccess.style.display = 'block';
+      msgError.style.display   = 'none';
     }
-
     function hideMessages() {
-      document.getElementById('auth-error').style.display = 'none';
-      document.getElementById('auth-success').style.display = 'none';
+      msgError.style.display   = 'none';
+      msgSuccess.style.display = 'none';
     }
 
-    // ── Login (email/password) ──────────────────────────────────────
-    formLogin.addEventListener('submit', async function(e) {
+    // ── FORM SUBMIT (login OU register) ─────────────────────────
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
       hideMessages();
-      const btn = document.getElementById('btn-login');
-      const origText = btn.textContent;
-      btn.textContent = 'Connexion...';
-      btn.disabled = true;
 
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
+      const email    = document.getElementById('input-email').value.trim();
+      const password = document.getElementById('input-password').value;
+      const origText = btnSubmit.textContent;
 
-      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.textContent = origText; btn.disabled = false; return; }
+      // ── MODE INSCRIPTION ──
+      if (mode === 'register') {
+        const confirm = document.getElementById('input-confirm').value;
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (password.length < 6) {
+          return showError('Le mot de passe doit contenir au moins 6 caractères.');
+        }
+        if (password !== confirm) {
+          return showError('Les mots de passe ne correspondent pas.');
+        }
+
+        btnSubmit.textContent = 'Création en cours...';
+        btnSubmit.disabled    = true;
+
+        const { data, error } = await sb.auth.signUp({ email, password });
+
+        btnSubmit.textContent = origText;
+        btnSubmit.disabled    = false;
+
+        if (error) return showError(error.message);
+
+        if (data.user && !data.session) {
+          showSuccess('✅ Compte créé ! Vérifiez votre email pour confirmer, puis connectez-vous.');
+          tabLogin.click(); // Bascule vers l'onglet Connexion
+        } else if (data.session) {
+          showSuccess('✅ Compte créé ! Redirection...');
+          setTimeout(() => { window.location.href = '/'; }, 800);
+        }
+
+        return;
+      }
+
+      // ── MODE CONNEXION ──
+      btnSubmit.textContent = 'Connexion...';
+      btnSubmit.disabled    = true;
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+      btnSubmit.textContent = origText;
+      btnSubmit.disabled    = false;
 
       if (error) {
-        const msg = error.message === 'Invalid login credentials'
-          ? 'Email ou mot de passe incorrect.'
-          : error.message;
-        showError(msg);
-        btn.textContent = origText;
-        btn.disabled = false;
-        return;
+        return showError(
+          error.message === 'Invalid login credentials'
+            ? 'Email ou mot de passe incorrect.'
+            : error.message
+        );
       }
 
       window.location.href = '/';
     });
 
-    // ── Register (email/password) ───────────────────────────────────
-    formRegister.addEventListener('submit', async function(e) {
-      e.preventDefault();
+    // ── GOOGLE AUTH ─────────────────────────────────────────────
+    document.getElementById('btn-google').addEventListener('click', async function () {
       hideMessages();
-      const btn = document.getElementById('btn-register');
-      const origText = btn.textContent;
-      btn.textContent = 'Création en cours...';
-      btn.disabled = true;
+      this.style.opacity = '0.5';
+      this.disabled = true;
 
-      const email = document.getElementById('register-email').value.trim();
-      const password = document.getElementById('register-password').value;
-      const confirm = document.getElementById('register-confirm').value;
-
-      if (password.length < 6) {
-        showError('Le mot de passe doit contenir au moins 6 caractères.');
-        btn.textContent = origText;
-        btn.disabled = false;
-        return;
-      }
-
-      if (password !== confirm) {
-        showError('Les mots de passe ne correspondent pas.');
-        btn.textContent = origText;
-        btn.disabled = false;
-        return;
-      }
-
-      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.textContent = origText; btn.disabled = false; return; }
-
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
-
-      if (error) {
-        showError(error.message);
-        btn.textContent = origText;
-        btn.disabled = false;
-        return;
-      }
-
-      if (data.user && !data.session) {
-        // Email confirmation required
-        showSuccess('✅ Compte créé ! Vérifiez votre boîte email pour confirmer votre inscription, puis connectez-vous.');
-        // Switch back to login tab
-        tabLogin.click();
-      } else if (data.session) {
-        // Auto-confirmed — redirect
-        showSuccess('✅ Compte créé ! Redirection...');
-        setTimeout(() => { window.location.href = '/'; }, 1000);
-      }
-
-      btn.textContent = origText;
-      btn.disabled = false;
-    });
-
-    // ── Google OAuth ────────────────────────────────────────────────
-    document.getElementById('btn-google').addEventListener('click', async function() {
-      hideMessages();
-      const btn = this;
-      btn.disabled = true;
-      btn.style.opacity = '0.5';
-
-      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.disabled = false; btn.style.opacity = '1'; return; }
-
-      const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      const { error } = await sb.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/',
-        },
+        options: { redirectTo: window.location.origin + '/' },
       });
 
       if (error) {
         showError(error.message);
-        btn.disabled = false;
-        btn.style.opacity = '1';
+        this.style.opacity = '1';
+        this.disabled = false;
       }
+      // Si pas d'erreur, le navigateur redirige vers Google automatiquement
     });
-
-    // ── Start ───────────────────────────────────────────────────────
-    initSupabase();
   </script>
 </body>
 </html>
