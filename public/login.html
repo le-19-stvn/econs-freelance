@@ -6,8 +6,7 @@
   <title>eCons Freelance — Connexion</title>
   <meta name="description" content="Connectez-vous à votre espace eCons Freelance pour gérer vos clients, projets et factures.">
 
-  <script src="https://cdn.tailwindcss.com">
-  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -32,6 +31,12 @@
     @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 20px rgba(51,102,255,0.3); } 50% { box-shadow: 0 0 40px rgba(51,102,255,0.6); } }
     .animate-float { animation: float 6s ease-in-out infinite; }
     .animate-glow { animation: glow-pulse 3s ease-in-out infinite; }
+    /* Fix: explicit pointer & styling for tabs to guarantee clickability */
+    .auth-tab { cursor: pointer; user-select: none; position: relative; z-index: 10; }
+    .auth-tab-active { background: rgba(51,102,255,0.2); color: #5b8aff; }
+    .auth-tab-active-cyan { background: rgba(0,212,255,0.2); color: #00D4FF; }
+    .auth-tab-inactive { color: rgba(255,255,255,0.4); }
+    .auth-tab-inactive:hover { color: rgba(255,255,255,0.6); }
   </style>
 </head>
 <body class="bg-navy-950 text-white font-inter min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -55,18 +60,18 @@
     <!-- Card -->
     <div class="bg-white/[0.04] backdrop-blur-xl border border-white/[0.07] rounded-3xl p-8 shadow-2xl">
 
-      <!-- Tabs -->
-      <div class="flex mb-8 bg-white/[0.04] rounded-2xl p-1">
-        <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 bg-electric/20 text-electric-light">
+      <!-- Tabs — using explicit styles for guaranteed clickability -->
+      <div class="flex mb-6 bg-white/[0.04] rounded-2xl p-1">
+        <button type="button" id="tab-login" class="auth-tab auth-tab-active flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300">
           Connexion
         </button>
-        <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-white/40 hover:text-white/60">
+        <button type="button" id="tab-register" class="auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300">
           Inscription
         </button>
       </div>
 
       <!-- Google OAuth -->
-      <button onclick="handleGoogleLogin()" id="btn-google" class="w-full flex items-center justify-center gap-3 bg-white/[0.06] border border-white/[0.1] rounded-2xl px-6 py-3 hover:bg-white/[0.12] hover:border-white/[0.2] transition-all duration-300 active:scale-[0.97] mb-6 group">
+      <button type="button" id="btn-google" class="w-full flex items-center justify-center gap-3 bg-white/[0.06] border border-white/[0.1] rounded-2xl px-6 py-3 hover:bg-white/[0.12] hover:border-white/[0.2] transition-all duration-300 active:scale-[0.97] mb-5 group cursor-pointer">
         <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -77,19 +82,18 @@
       </button>
 
       <!-- Divider -->
-      <div class="flex items-center gap-3 mb-6">
+      <div class="flex items-center gap-3 mb-5">
         <div class="flex-1 h-px bg-white/[0.08]"></div>
         <span class="text-xs text-white/30">ou par email</span>
         <div class="flex-1 h-px bg-white/[0.08]"></div>
       </div>
 
-      <!-- Error message -->
+      <!-- Error / Success messages -->
       <div id="auth-error" class="hidden mb-4 px-4 py-3 rounded-2xl bg-accent-red/10 border border-accent-red/20 text-accent-red text-sm"></div>
-      <!-- Success message -->
       <div id="auth-success" class="hidden mb-4 px-4 py-3 rounded-2xl bg-accent-green/10 border border-accent-green/20 text-accent-green text-sm"></div>
 
-      <!-- Login Form -->
-      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5">
+      <!-- ====== LOGIN FORM ====== -->
+      <form id="form-login" class="space-y-5">
         <div>
           <label class="block text-sm font-medium text-white/60 mb-1.5">Email</label>
           <input type="email" id="login-email" required placeholder="freelance@email.com"
@@ -100,13 +104,13 @@
           <input type="password" id="login-password" required placeholder="••••••••" minlength="6"
             class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
         </div>
-        <button type="submit" id="btn-login" class="w-full bg-gradient-to-r from-electric to-electric-light text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(51,102,255,0.45)] transition-all duration-300 active:scale-[0.97] animate-glow">
+        <button type="submit" id="btn-login" class="w-full bg-gradient-to-r from-electric to-electric-light text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(51,102,255,0.45)] transition-all duration-300 active:scale-[0.97] animate-glow cursor-pointer">
           Se connecter
         </button>
       </form>
 
-      <!-- Register Form (hidden) -->
-      <form id="form-register" onsubmit="handleRegister(event)" class="space-y-5 hidden">
+      <!-- ====== REGISTER FORM (hidden by default) ====== -->
+      <form id="form-register" class="space-y-5" style="display:none;">
         <div>
           <label class="block text-sm font-medium text-white/60 mb-1.5">Email</label>
           <input type="email" id="register-email" required placeholder="freelance@email.com"
@@ -122,7 +126,7 @@
           <input type="password" id="register-confirm" required placeholder="••••••••" minlength="6"
             class="w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm">
         </div>
-        <button type="submit" id="btn-register" class="w-full bg-gradient-to-r from-accent-cyan to-electric text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(0,212,255,0.35)] transition-all duration-300 active:scale-[0.97]">
+        <button type="submit" id="btn-register" class="w-full bg-gradient-to-r from-accent-cyan to-electric text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(0,212,255,0.35)] transition-all duration-300 active:scale-[0.97] cursor-pointer">
           Créer mon compte
         </button>
       </form>
@@ -132,17 +136,16 @@
   </div>
 
   <script>
-    let supabase = null;
+    let supabaseClient = null;
 
-    // Initialize Supabase from backend config
+    // ── Initialize Supabase ──────────────────────────────────────────
     async function initSupabase() {
       try {
         const res = await fetch('/api/config');
         const config = await res.json();
         if (config.supabaseUrl && config.supabaseAnonKey) {
-          supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-          // Check if already logged in
-          const { data: { session } } = await supabase.auth.getSession();
+          supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+          const { data: { session } } = await supabaseClient.auth.getSession();
           if (session) {
             window.location.href = '/';
           }
@@ -154,112 +157,144 @@
       }
     }
 
-    function switchTab(tab) {
-      const loginTab = document.getElementById('tab-login');
-      const registerTab = document.getElementById('tab-register');
-      const loginForm = document.getElementById('form-login');
-      const registerForm = document.getElementById('form-register');
+    // ── Tab switching (Connexion ↔ Inscription) ─────────────────────
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const formLogin = document.getElementById('form-login');
+    const formRegister = document.getElementById('form-register');
 
+    tabLogin.addEventListener('click', function() {
       hideMessages();
+      // Activate login tab
+      tabLogin.className = 'auth-tab auth-tab-active flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
+      tabRegister.className = 'auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
+      // Show login, hide register
+      formLogin.style.display = '';
+      formRegister.style.display = 'none';
+    });
 
-      if (tab === 'login') {
-        loginTab.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 bg-electric/20 text-electric-light';
-        registerTab.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-white/40 hover:text-white/60';
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-      } else {
-        registerTab.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 bg-accent-cyan/20 text-accent-cyan';
-        loginTab.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-white/40 hover:text-white/60';
-        registerForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-      }
-    }
+    tabRegister.addEventListener('click', function() {
+      hideMessages();
+      // Activate register tab
+      tabRegister.className = 'auth-tab auth-tab-active-cyan flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
+      tabLogin.className = 'auth-tab auth-tab-inactive flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300';
+      // Show register, hide login
+      formRegister.style.display = '';
+      formLogin.style.display = 'none';
+    });
 
+    // ── Messages ────────────────────────────────────────────────────
     function showError(msg) {
       const el = document.getElementById('auth-error');
       el.textContent = msg;
-      el.classList.remove('hidden');
-      document.getElementById('auth-success').classList.add('hidden');
+      el.style.display = 'block';
+      document.getElementById('auth-success').style.display = 'none';
     }
 
     function showSuccess(msg) {
       const el = document.getElementById('auth-success');
       el.textContent = msg;
-      el.classList.remove('hidden');
-      document.getElementById('auth-error').classList.add('hidden');
+      el.style.display = 'block';
+      document.getElementById('auth-error').style.display = 'none';
     }
 
     function hideMessages() {
-      document.getElementById('auth-error').classList.add('hidden');
-      document.getElementById('auth-success').classList.add('hidden');
+      document.getElementById('auth-error').style.display = 'none';
+      document.getElementById('auth-success').style.display = 'none';
     }
 
-    async function handleLogin(e) {
+    // ── Login (email/password) ──────────────────────────────────────
+    formLogin.addEventListener('submit', async function(e) {
       e.preventDefault();
       hideMessages();
       const btn = document.getElementById('btn-login');
+      const origText = btn.textContent;
       btn.textContent = 'Connexion...';
       btn.disabled = true;
 
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.textContent = origText; btn.disabled = false; return; }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (error) {
-        showError(error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message);
-        btn.textContent = 'Se connecter';
+        const msg = error.message === 'Invalid login credentials'
+          ? 'Email ou mot de passe incorrect.'
+          : error.message;
+        showError(msg);
+        btn.textContent = origText;
         btn.disabled = false;
         return;
       }
 
       window.location.href = '/';
-    }
+    });
 
-    async function handleRegister(e) {
+    // ── Register (email/password) ───────────────────────────────────
+    formRegister.addEventListener('submit', async function(e) {
       e.preventDefault();
       hideMessages();
       const btn = document.getElementById('btn-register');
-      btn.textContent = 'Création...';
+      const origText = btn.textContent;
+      btn.textContent = 'Création en cours...';
       btn.disabled = true;
 
-      const email = document.getElementById('register-email').value;
+      const email = document.getElementById('register-email').value.trim();
       const password = document.getElementById('register-password').value;
       const confirm = document.getElementById('register-confirm').value;
 
-      if (password !== confirm) {
-        showError('Les mots de passe ne correspondent pas.');
-        btn.textContent = 'Créer mon compte';
+      if (password.length < 6) {
+        showError('Le mot de passe doit contenir au moins 6 caractères.');
+        btn.textContent = origText;
         btn.disabled = false;
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (password !== confirm) {
+        showError('Les mots de passe ne correspondent pas.');
+        btn.textContent = origText;
+        btn.disabled = false;
+        return;
+      }
+
+      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.textContent = origText; btn.disabled = false; return; }
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
 
       if (error) {
         showError(error.message);
-        btn.textContent = 'Créer mon compte';
+        btn.textContent = origText;
         btn.disabled = false;
         return;
       }
 
       if (data.user && !data.session) {
-        showSuccess('Compte créé ! Vérifiez votre email pour confirmer votre inscription.');
-      } else {
-        window.location.href = '/';
+        // Email confirmation required
+        showSuccess('✅ Compte créé ! Vérifiez votre boîte email pour confirmer votre inscription, puis connectez-vous.');
+        // Switch back to login tab
+        tabLogin.click();
+      } else if (data.session) {
+        // Auto-confirmed — redirect
+        showSuccess('✅ Compte créé ! Redirection...');
+        setTimeout(() => { window.location.href = '/'; }, 1000);
       }
 
-      btn.textContent = 'Créer mon compte';
+      btn.textContent = origText;
       btn.disabled = false;
-    }
+    });
 
-    async function handleGoogleLogin() {
+    // ── Google OAuth ────────────────────────────────────────────────
+    document.getElementById('btn-google').addEventListener('click', async function() {
       hideMessages();
-      const btn = document.getElementById('btn-google');
+      const btn = this;
       btn.disabled = true;
       btn.style.opacity = '0.5';
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      if (!supabaseClient) { showError('Supabase non initialisé. Rechargez la page.'); btn.disabled = false; btn.style.opacity = '1'; return; }
+
+      const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/',
@@ -271,9 +306,9 @@
         btn.disabled = false;
         btn.style.opacity = '1';
       }
-      // If no error, the browser redirects to Google — no further action needed
-    }
+    });
 
+    // ── Start ───────────────────────────────────────────────────────
     initSupabase();
   </script>
 </body>
