@@ -3,13 +3,13 @@
    ═════════════════════════════════════════════════════════════════════ */
 
 // ── Glass card helper ─────────────────────────────────────────────────
-const glass = 'bg-white/[0.03] backdrop-blur-xl border border-white/[0.1] rounded-xl';
-const glassHover = 'hover:bg-white/[0.06] hover:border-white/[0.2] hover:shadow-lg transition-all duration-300';
+const glass = 'bg-[#040714]/60 backdrop-blur-2xl border border-electric/30 rounded-2xl shadow-[0_0_15px_rgba(51,102,255,0.1)] hover:border-electric/50 transition-all duration-300';
+const glassHover = 'hover:bg-[#070b24]/80 hover:shadow-[0_0_25px_rgba(51,102,255,0.2)] transition-all duration-300';
 const btnPrimary = 'bg-electric text-white font-swiss tracking-tight rounded-xl px-6 py-3 hover:bg-electric-light transition-all duration-300 active:scale-[0.98]';
 const btnSecondary = 'bg-white/[0.03] border border-white/[0.2] text-white font-swiss tracking-tight rounded-xl px-5 py-2.5 hover:bg-white/[0.1] transition-all duration-300';
 const inputClass = 'w-full px-4 py-3 rounded-lg bg-transparent border border-white/[0.15] text-white placeholder-white/30 outline-none focus:border-electric focus:bg-white/[0.02] transition-all duration-300 text-sm font-swiss tracking-tight';
 const labelClass = 'block text-xs font-swiss tracking-wider text-white/50 mb-1.5 uppercase';
-const selectClass = 'w-full px-4 py-3 rounded-lg bg-navy-950 border border-white/[0.15] text-white outline-none focus:border-electric transition-all duration-300 text-sm font-swiss tracking-tight appearance-none';
+const selectClass = 'w-full px-4 py-3 rounded-lg bg-black border border-white/[0.15] text-white outline-none focus:border-electric transition-all duration-300 text-sm font-swiss tracking-tight appearance-none';
 
 function statusBadge(statut) {
   const map = {
@@ -598,10 +598,19 @@ async function submitClient(e, id) {
   try {
     const fd = new FormData(e.target);
     const data = Object.fromEntries(fd);
-    if (id) { await api.updateClient(id, data); toast('Client mis à jour'); }
-    else { await api.createClient(data); toast('Client créé'); }
-    closeModal();
-    renderView();
+    let res;
+    if (id) { 
+      res = await api.updateClient(id, data); 
+    } else { 
+      res = await api.createClient(data); 
+    }
+    if (res && (res.status === 200 || res.status === 201)) {
+      toast(id ? 'Client mis à jour' : 'Client créé');
+      closeModal();
+      await renderView();
+    } else {
+      toast('Erreur: ' + (res?.data?.error || 'Sauvegarde échouée'), 'error');
+    }
   } catch (err) { toast('Erreur: ' + (err.message || 'Impossible de sauvegarder'), 'error'); }
 }
 
@@ -643,7 +652,7 @@ async function renderProjets() {
         <h2 class="swiss-title text-4xl text-white">Projets</h2>
         <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mt-2">${projets.length} projet${projets.length > 1 ? 's' : ''}</p>
       </div>
-      <button onclick="showProjetForm()" class="${btnPrimary} text-sm flex items-center gap-2" ${clients.length === 0 ? 'disabled title="Créez d\'abord un client"' : ''}>
+      <button onclick="showProjetForm()" class="${btnPrimary} text-sm flex items-center gap-2">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         Nouveau Projet
       </button>
@@ -689,6 +698,11 @@ async function renderProjets() {
 
 async function showProjetForm(id = null) {
   const clients = window._clients || await api.getClients();
+  if (!clients || clients.length === 0) {
+    toast("Veuillez d'abord créer un client.", "info");
+    navigate('clients');
+    return;
+  }
   let projet = { nom_projet: '', client_id: '', date_limite: '', statut: 'En cours', budget_euros: '' };
   if (id) { projet = await api.getProjet(id); }
   openModal(`
@@ -735,23 +749,24 @@ async function submitProjet(e, id) {
 
   if (id) {
     const res = await api.updateProjet(id, data);
-    if (res.status !== 200) { toast(res.data.error || 'Erreur', 'error'); return; }
-    if (res.data.peut_generer_facture) toast('Projet terminé ! Vous pouvez générer la facture.', 'info');
+    if (res.status !== 200 && res.status !== 201) { toast(res.data?.error || 'Erreur', 'error'); return; }
+    if (res.data?.peut_generer_facture) toast('Projet terminé ! Vous pouvez générer la facture.', 'info');
     else toast('Projet mis à jour');
   } else {
     const res = await api.createProjet(data);
-    if (res.status !== 201) { toast(res.data.error || 'Erreur', 'error'); return; }
+    if (res.status !== 201 && res.status !== 200) { toast(res.data?.error || 'Erreur', 'error'); return; }
     toast('Projet créé');
   }
-  closeModal(); renderView();
+  closeModal();
+  await renderView();
 }
 
 async function genererFacture(projetId) {
   const settings = JSON.parse(localStorage.getItem('freelance_settings') || '{"tva":"20"}');
   const res = await api.genererFacture(projetId, settings.tva);
-  if (res.status === 201) { toast('Facture générée avec succès !'); renderView(); }
+  if (res.status === 201 || res.status === 200) { toast('Facture générée avec succès !'); await renderView(); }
   else if (res.status === 409) { toast('Une facture existe déjà pour ce projet', 'error'); }
-  else { toast(res.data.error || 'Erreur', 'error'); }
+  else { toast(res.data?.error || 'Erreur', 'error'); }
 }
 
 async function deleteProjet(id, nom) {
@@ -783,6 +798,10 @@ async function renderFactures() {
         <h2 class="swiss-title text-4xl text-white">Factures</h2>
         <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mt-2">${factures.length} facture${factures.length > 1 ? 's' : ''}</p>
       </div>
+      <button onclick="showNouvelleFactureModal()" class="${btnPrimary} text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        Nouvelle Facture
+      </button>
     </div>
     ${factures.length === 0 ? `
       <div class="${glass} p-12 text-center">
@@ -895,9 +914,56 @@ async function showFactureDetail(id) {
 
 async function updateFactureStatut(id, statut) {
   const res = await api.updateFacture(id, { statut });
-  if (res.status === 200) { toast(`Facture passée en "${statut}"`); closeModal(); renderView(); }
-  else { toast(res.data.error || 'Erreur de transition', 'error'); }
+  if (res.status === 200) { toast(`Facture passée en "${statut}"`); closeModal(); await renderView(); }
+  else { toast(res.data?.error || 'Erreur de transition', 'error'); }
 }
+
+async function showNouvelleFactureModal() {
+  let projets = [];
+  try { projets = await api.getProjets(); } catch(e) {}
+  const projetsTermines = (Array.isArray(projets) ? projets : []).filter(p => p.statut === 'Terminé' && p.peut_generer_facture);
+  
+  if (projetsTermines.length === 0) {
+    toast("Aucun projet terminé en attente de facturation.", 'info');
+    return;
+  }
+  
+  openModal(`
+    <div class="${glass} p-8">
+      <h3 class="text-lg font-bold mb-6">Nouvelle Facture</h3>
+      <form id="facture-form" class="space-y-4" onsubmit="submitNouvelleFacture(event)">
+        <div>
+          <label class="${labelClass}">Sélectionner un projet validé</label>
+          <select name="projet_id" class="${selectClass}" required>
+            <option value="">-- Choisissez un projet --</option>
+            ${projetsTermines.map(p => `<option value="${p.id}">${p.nom_projet} (${p.client_nom})</option>`).join('')}
+          </select>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="submit" class="${btnPrimary} flex-1 text-sm">Générer la facture</button>
+          <button type="button" onclick="closeModal()" class="${btnSecondary} text-sm">Annuler</button>
+        </div>
+      </form>
+    </div>
+  `);
+}
+
+async function submitNouvelleFacture(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd);
+  if (!data.projet_id) return;
+  
+  const res = await api.genererFacture(data.projet_id, 20);
+  if (res.status === 201 || res.status === 200) {
+    toast('Facture générée !');
+    closeModal();
+    await renderView();
+  } else {
+    toast(res.data?.error || 'Erreur de génération', 'error');
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROFIL VIEW
