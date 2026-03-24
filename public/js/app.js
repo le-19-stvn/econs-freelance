@@ -3,13 +3,13 @@
    ═════════════════════════════════════════════════════════════════════ */
 
 // ── Glass card helper ─────────────────────────────────────────────────
-const glass = 'bg-[#040714]/60 backdrop-blur-2xl border border-electric/30 rounded-2xl shadow-[0_0_15px_rgba(51,102,255,0.1)] hover:border-electric/50 transition-all duration-300';
-const glassHover = 'hover:bg-[#070b24]/80 hover:shadow-[0_0_25px_rgba(51,102,255,0.2)] transition-all duration-300';
-const btnPrimary = 'bg-electric text-white font-swiss tracking-tight rounded-xl px-6 py-3 hover:bg-electric-light transition-all duration-300 active:scale-[0.98]';
-const btnSecondary = 'bg-white/[0.03] border border-white/[0.2] text-white font-swiss tracking-tight rounded-xl px-5 py-2.5 hover:bg-white/[0.1] transition-all duration-300';
-const inputClass = 'w-full px-4 py-3 rounded-lg bg-transparent border border-white/[0.15] text-white placeholder-white/30 outline-none focus:border-electric focus:bg-white/[0.02] transition-all duration-300 text-sm font-swiss tracking-tight';
-const labelClass = 'block text-xs font-swiss tracking-wider text-white/50 mb-1.5 uppercase';
-const selectClass = 'w-full px-4 py-3 rounded-lg bg-black border border-white/[0.15] text-white outline-none focus:border-electric transition-all duration-300 text-sm font-swiss tracking-tight appearance-none';
+const glass = 'bg-white/[0.04] backdrop-blur-xl border border-white/[0.07] rounded-3xl';
+const glassHover = 'hover:bg-white/[0.07] hover:border-white/[0.12] hover:shadow-lg hover:shadow-black/20 transition-all duration-300';
+const btnPrimary = 'bg-gradient-to-r from-electric to-electric-light text-white font-semibold rounded-2xl px-6 py-3 hover:shadow-[0_0_24px_rgba(51,102,255,0.45)] transition-all duration-300 active:scale-[0.97]';
+const btnSecondary = 'bg-white/[0.06] border border-white/[0.1] text-accent-cyan font-medium rounded-2xl px-5 py-2.5 hover:bg-white/[0.1] transition-all duration-300';
+const inputClass = 'w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 outline-none focus:border-electric/50 focus:bg-white/[0.08] transition-all duration-300 text-sm';
+const labelClass = 'block text-sm font-medium text-white/60 mb-1.5';
+const selectClass = 'w-full px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.1] text-white outline-none focus:border-electric/50 transition-all duration-300 text-sm appearance-none';
 
 function statusBadge(statut) {
   const map = {
@@ -20,7 +20,7 @@ function statusBadge(statut) {
     'Payé': 'bg-accent-green/20 text-accent-green border-accent-green/30',
     'Retard': 'bg-accent-orange/20 text-accent-orange border-accent-orange/30',
   };
-  return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-swiss uppercase tracking-wider border ${map[statut] || 'bg-white/10 text-white/60 border-white/15'}">${statut}</span>`;
+  return `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${map[statut] || 'bg-white/10 text-white/60 border-white/15'}">${statut}</span>`;
 }
 
 function formatEuros(cents) {
@@ -31,32 +31,6 @@ function formatEurosPlain(cents) {
   return (cents / 100).toFixed(2).replace('.', ',') + ' €';
 }
 
-/**
- * Récupère le profil utilisateur en fusionnant :
- * 1. Les données Supabase (email, nom Google)
- * 2. Les données sauvegardées en localStorage
- */
-async function getUserProfil() {
-  const saved = JSON.parse(localStorage.getItem('freelance_profil') || '{}');
-  let userEmail = '';
-  let userName = '';
-  let userMetier = '';
-  try {
-    const user = await getCurrentUser();
-    if (user) {
-      userEmail = user.email || '';
-      const meta = user.user_metadata || {};
-      userName = meta.full_name || meta.name || userEmail.split('@')[0] || '';
-    }
-  } catch (e) { /* ignore */ }
-  return {
-    nom: saved.nom || userName || 'Mon Profil',
-    email: saved.email || userEmail || '',
-    metier: saved.metier || '',
-    bio: saved.bio || '',
-  };
-}
-
 // ═══════════════════════════════════════════════════════════════════════
 // PDF INVOICE GENERATION
 // ═══════════════════════════════════════════════════════════════════════
@@ -65,7 +39,7 @@ async function generateInvoicePDF(factureId) {
 
   const f = await api.getFacture(factureId);
   const settings = JSON.parse(localStorage.getItem('freelance_settings') || '{}');
-  const profil = await getUserProfil();
+  const profil = JSON.parse(localStorage.getItem('freelance_profil') || '{"nom":"Freelancer","email":"freelancer@email.com","metier":"Développeur Web"}');
 
   const tvaRate = settings.tva || '20';
   const siret = settings.siret || 'Non renseigné';
@@ -190,7 +164,7 @@ async function generateInvoicePDF(factureId) {
     };
 
     // Use jsPDF's native save() to force a proper binary PDF download
-    await html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
+    await html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
       pdf.save(filename);
     });
 
@@ -225,10 +199,10 @@ function closeModal() {
 
 // ── Navigation ────────────────────────────────────────────────────────
 let currentView = 'dashboard';
-const pageTitles = {
-  dashboard: 'Dashboard',
-  clients: 'Clients',
-  projets: 'Projets',
+const pageTitles = { 
+  dashboard: 'Dashboard', 
+  clients: 'Clients', 
+  projets: 'Projets', 
   factures: 'Factures',
   profil: 'Mon Profil',
   parametres: 'Paramètres',
@@ -240,12 +214,12 @@ function navigate(view) {
     view = 'login';
     window.location.hash = 'login';
   }
-
+  
   currentView = view;
   window.location.hash = view;
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = pageTitles[view] || view;
-
+  
   document.querySelectorAll('.nav-btn').forEach(btn => {
     const isActive = btn.dataset.nav === view;
     btn.classList.toggle('bg-electric/20', isActive);
@@ -261,29 +235,15 @@ async function renderView() {
     el.innerHTML = renderLogin();
     return;
   }
-
+  
   el.innerHTML = '<div class="flex items-center justify-center h-64"><div class="w-8 h-8 border-2 border-electric/30 border-t-electric rounded-full animate-spin"></div></div>';
-  try {
-    switch (currentView) {
-      case 'dashboard': el.innerHTML = await renderDashboard(); try { initDashboardCharts(); } catch (ce) { console.error('Chart error:', ce); } break;
-      case 'clients': el.innerHTML = await renderClients(); break;
-      case 'projets': el.innerHTML = await renderProjets(); break;
-      case 'factures': el.innerHTML = await renderFactures(); break;
-      case 'profil': el.innerHTML = await renderProfil(); try { initProfilCharts(); } catch (ce) { console.error('Chart error:', ce); } break;
-      case 'parametres': el.innerHTML = await renderParametres(); break;
-    }
-  } catch (err) {
-    console.error('Erreur de chargement:', err);
-    el.innerHTML = `
-      <div class="${glass} p-12 text-center max-w-lg mx-auto mt-12">
-        <div class="w-16 h-16 mx-auto rounded-2xl bg-accent-red/15 flex items-center justify-center mb-4">
-          <svg class="w-8 h-8 text-accent-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-        </div>
-        <p class="text-white/70 font-semibold mb-2">Erreur de chargement</p>
-        <p class="text-sm text-white/40 mb-6">${err.message || 'Le serveur a rencontré une erreur. Vérifiez votre connexion et réessayez.'}</p>
-        <button onclick="renderView()" class="${btnPrimary} text-sm">Réessayer</button>
-      </div>`;
-    toast('Erreur: ' + (err.message || 'Impossible de charger les données'), 'error');
+  switch (currentView) {
+    case 'dashboard': el.innerHTML = await renderDashboard(); initDashboardCharts(); break;
+    case 'clients':   el.innerHTML = await renderClients(); break;
+    case 'projets':   el.innerHTML = await renderProjets(); break;
+    case 'factures':  el.innerHTML = await renderFactures(); break;
+    case 'profil':    el.innerHTML = await renderProfil(); initProfilCharts(); break;
+    case 'parametres':el.innerHTML = await renderParametres(); break;
   }
 }
 
@@ -292,14 +252,7 @@ async function renderView() {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderDashboard() {
   let clients = [], projets = [], factures = [];
-  try {
-    const results = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]);
-    clients = Array.isArray(results[0]) ? results[0] : [];
-    projets = Array.isArray(results[1]) ? results[1] : [];
-    factures = Array.isArray(results[2]) ? results[2] : [];
-  } catch (e) {
-    console.error('Dashboard data error:', e);
-  }
+  try { [clients, projets, factures] = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]); } catch(e) {}
 
   // Store factures globally for charts
   window._factures = factures;
@@ -336,23 +289,25 @@ async function renderDashboard() {
     <div class="col-span-12 xl:col-span-4 flex flex-col gap-6">
 
       <!-- Summary Card (Visa-style) -->
-      <div class="animate-slide-up ${glass} ${glassHover} p-8 relative overflow-hidden">
-        <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-1">Chiffre d'affaires total</p>
-        <p class="swiss-title text-5xl text-white mb-2">${totalHT === 0 ? '— €' : formatEuros(totalHT).replace(',00', '')}</p>
-        <p class="text-xs text-accent-green font-swiss tracking-tight mb-8">↑ ${projetsTermines || 0} projet${projetsTermines > 1 ? 's' : ''} terminé${projetsTermines > 1 ? 's' : ''}</p>
-        <div class="grid grid-cols-2 gap-4 mb-8">
-          <div class="border-t border-white/[0.15] pt-3">
-            <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-0.5">Clients</p>
-            <p class="swiss-title text-2xl">${clients.length || 0}</p>
+      <div class="animate-slide-up ${glass} ${glassHover} p-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-electric/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/4"></div>
+        <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent-cyan/8 to-transparent rounded-full translate-y-1/2 -translate-x-1/4"></div>
+        <p class="text-xs text-white/40 font-medium uppercase tracking-wider mb-1">Chiffre d'affaires total</p>
+        <p class="text-3xl font-bold text-white mb-1">${formatEuros(totalHT)}</p>
+        <p class="text-xs text-accent-green font-medium mb-6">↑ ${projetsTermines} projet${projetsTermines > 1 ? 's' : ''} terminé${projetsTermines > 1 ? 's' : ''}</p>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="bg-white/[0.04] rounded-2xl p-3.5">
+            <p class="text-[11px] text-white/40 mb-0.5">Clients</p>
+            <p class="text-xl font-bold">${clients.length}</p>
           </div>
-          <div class="border-t border-white/[0.15] pt-3">
-            <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-0.5">TVA à collecter</p>
-            <p class="swiss-title text-2xl text-accent-cyan">${totalTVA === 0 ? '— €' : formatEuros(totalTVA).replace(',00', '')}</p>
+          <div class="bg-white/[0.04] rounded-2xl p-3.5">
+            <p class="text-[11px] text-white/40 mb-0.5">TVA à collecter</p>
+            <p class="text-xl font-bold text-accent-orange">${formatEuros(totalTVA)}</p>
           </div>
         </div>
-        <div class="flex gap-3 mt-4 border-t border-white/[0.1] pt-6">
-          <button onclick="navigate('projets')" class="${btnPrimary} flex-1 text-sm py-3 transition-colors">Nouveau Projet</button>
-          <button onclick="navigate('factures')" class="${btnSecondary} flex-1 text-sm py-3 transition-colors">Factures</button>
+        <div class="flex gap-3">
+          <button onclick="navigate('projets')" class="${btnPrimary} flex-1 text-sm py-2.5 animate-glow">Nouveau Projet</button>
+          <button onclick="navigate('factures')" class="${btnSecondary} flex-1 text-sm py-2.5">Factures</button>
         </div>
       </div>
 
@@ -367,7 +322,7 @@ async function renderDashboard() {
         </div>
         <div class="flex flex-col gap-3">
           ${facturesEnAttente.length === 0 ? '<p class="text-sm text-white/30 text-center py-6">Aucune facture en attente</p>' :
-      facturesEnAttente.slice(0, 5).map(f => `
+            facturesEnAttente.slice(0, 5).map(f => `
             <div class="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-200 cursor-pointer group" onclick="navigate('factures')">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl ${f.statut === 'Retard' ? 'bg-accent-orange/15' : 'bg-electric/15'} flex items-center justify-center">
@@ -391,45 +346,47 @@ async function renderDashboard() {
     <div class="col-span-12 xl:col-span-8 flex flex-col gap-6">
 
       <!-- Revenue Chart (Price chart style) -->
-      <div class="animate-slide-up ${glass} ${glassHover} p-8">
-        <div class="flex items-center justify-between mb-4">
+      <div class="animate-slide-up ${glass} ${glassHover} p-6">
+        <div class="flex items-center justify-between mb-2">
           <div>
-            <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-1">Performance annuelle</p>
-            <p class="swiss-title text-4xl mt-1">${totalHT === 0 ? '— €' : formatEuros(totalHT).replace(',00', '')} <span class="text-lg font-swiss tracking-tight text-accent-green">+${projets.length > 0 ? ((projetsTermines / projets.length) * 100).toFixed(0) : 0}%</span></p>
+            <p class="text-xs text-white/40 uppercase tracking-wider">Performance annuelle</p>
+            <p class="text-2xl font-bold mt-1">${formatEuros(totalHT)} <span class="text-sm font-medium text-accent-green">+${projets.length > 0 ? ((projetsTermines / projets.length) * 100).toFixed(0) : 0}%</span></p>
           </div>
-          <div class="flex gap-1.5 bg-white/[0.03] border border-white/[0.1] rounded-lg p-1">
-            ${['1M', '3M', '6M', '1A'].map((p, i) => `<button class="px-3.5 py-1.5 rounded-md text-[10px] font-swiss uppercase transition-all duration-200 ${i === 2 ? 'bg-electric text-white' : 'text-white/40 hover:text-white hover:bg-white/[0.05]'}">${p}</button>`).join('')}
+          <div class="flex gap-1.5">
+            ${['1M', '3M', '6M', '1A'].map((p, i) => `<button class="px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${i === 2 ? 'bg-electric/20 text-electric-light' : 'text-white/40 hover:text-white/60 hover:bg-white/[0.05]'}">${p}</button>`).join('')}
           </div>
         </div>
-        <div class="h-64 mt-6"><canvas id="revenue-chart"></canvas></div>
+        <div class="h-64 mt-4"><canvas id="revenue-chart"></canvas></div>
       </div>
 
       <!-- Bottom row: Monthly bars + Actions -->
       <div class="grid grid-cols-12 gap-6">
-        <!-- Monthly Revenue (Swiss style bars) -->
-        <div class="col-span-12 lg:col-span-7 animate-slide-up-2 ${glass} ${glassHover} p-8">
-          <div class="flex items-center justify-between mb-4 border-b border-white/[0.1] pb-4">
+        <!-- Monthly Revenue (Your Assets style with 3D bars) -->
+        <div class="col-span-12 lg:col-span-7 animate-slide-up-2 ${glass} ${glassHover} p-6">
+          <div class="flex items-center justify-between mb-2">
             <div>
-              <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-1">Revenus du mois</p>
-              <h3 class="swiss-title text-2xl text-white">Suivi en temps réel</h3>
+              <h3 class="font-semibold text-white/90">Revenus du mois</h3>
+              <p class="text-xs text-white/40 mt-0.5">Suivi en temps réel</p>
             </div>
-            <p class="swiss-title text-3xl">${values[values.length - 1] === 0 ? '— €' : formatEuros(values[values.length - 1] * 100).replace(',00', '')}</p>
+            <p class="text-lg font-bold">${formatEuros(values[values.length - 1] * 100)} <span class="text-xs text-accent-green font-medium">+8.35%</span></p>
           </div>
-          <!-- Swiss bars -->
-          <div class="flex items-end justify-between h-40 pt-4 px-2">
+          <!-- 3D cylindrical bars -->
+          <div class="flex items-end justify-between h-44 pt-6 px-2">
             ${months.map((m, i) => {
-        const pct = (values[i] / maxVal) * 100;
-        const change = i > 0 ? (((values[i] - values[i - 1]) / values[i - 1]) * 100).toFixed(1) : '+0.0';
-        const isPositive = i === 0 || values[i] >= values[i - 1];
-        return `
-              <div class="flex flex-col items-center gap-3 flex-1 group">
-                <span class="text-[10px] font-swiss tracking-tight ${isPositive ? 'text-accent-green' : 'text-accent-red'} opacity-0 group-hover:opacity-100 transition-opacity">${isPositive ? '+' : ''}${change}%</span>
-                <div class="w-8 relative transition-all duration-500 bg-white/[0.05]" style="height:100%">
-                  <div class="absolute bottom-0 left-0 right-0 bg-electric transition-all duration-300" style="height:${pct}%"></div>
+              const pct = (values[i] / maxVal) * 100;
+              const change = i > 0 ? (((values[i] - values[i-1]) / values[i-1]) * 100).toFixed(1) : '+0.0';
+              const isPositive = i === 0 || values[i] >= values[i-1];
+              return `
+              <div class="flex flex-col items-center gap-2 flex-1 group">
+                <span class="text-[10px] font-medium ${isPositive ? 'text-accent-green' : 'text-accent-red'} opacity-0 group-hover:opacity-100 transition-opacity">${isPositive ? '+' : ''}${change}%</span>
+                <div class="w-8 md:w-10 relative transition-all duration-500 group-hover:scale-105" style="height:${pct}%">
+                  <div class="absolute inset-0 rounded-t-full bg-gradient-to-t from-electric/30 via-electric/50 to-accent-cyan/40 border border-electric/20 group-hover:from-electric/40 group-hover:via-electric/60 group-hover:to-accent-cyan/50 transition-all duration-300"></div>
+                  <div class="absolute top-0 left-0 right-0 h-2.5 rounded-full bg-gradient-to-b from-accent-cyan/60 to-electric/30"></div>
+                  <div class="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-white/[0.08] to-transparent rounded-t-full"></div>
                 </div>
-                <span class="text-[10px] text-white/40 font-swiss uppercase mt-1">${m}</span>
+                <span class="text-[11px] text-white/35 font-medium">${m}</span>
               </div>`;
-      }).join('')}
+            }).join('')}
           </div>
           <div class="flex items-center gap-4 mt-4 pt-4 border-t border-white/[0.06]">
             <span class="flex items-center gap-1.5 text-[11px] text-white/40"><span class="w-2.5 h-2.5 rounded-full bg-gradient-to-t from-electric/50 to-accent-cyan/50"></span>Revenus</span>
@@ -461,80 +418,75 @@ async function renderDashboard() {
 }
 
 function initDashboardCharts() {
-  try {
-    const canvas = document.getElementById('revenue-chart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement.clientHeight);
-    gradient.addColorStop(0, 'rgba(51,102,255,0.25)');
-    gradient.addColorStop(0.5, 'rgba(51,102,255,0.08)');
-    gradient.addColorStop(1, 'rgba(51,102,255,0)');
+  const canvas = document.getElementById('revenue-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement.clientHeight);
+  gradient.addColorStop(0, 'rgba(51,102,255,0.25)');
+  gradient.addColorStop(0.5, 'rgba(51,102,255,0.08)');
+  gradient.addColorStop(1, 'rgba(51,102,255,0)');
 
-    const labels = [];
-    const chartData = [];
-    const now = new Date();
-    const factures = window._factures || [];
+  const labels = [];
+  const chartData = [];
+  const now = new Date();
+  const factures = window._factures || [];
+  
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mStr = d.toLocaleString('fr-FR', { month: 'short' });
+    labels.push(mStr.charAt(0).toUpperCase() + mStr.slice(1).replace('.', ''));
+    const sumCents = factures.filter(f => {
+      const fd = new Date(f.date_creation);
+      return fd.getMonth() === d.getMonth() && fd.getFullYear() === d.getFullYear() && f.statut === 'Payé';
+    }).reduce((acc, f) => acc + (f.total_ht || 0), 0);
+    chartData.push(sumCents / 100);
+  }
 
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mStr = d.toLocaleString('fr-FR', { month: 'short' });
-      labels.push(mStr.charAt(0).toUpperCase() + mStr.slice(1).replace('.', ''));
-      const sumCents = factures.filter(f => {
-        const fd = new Date(f.date_creation);
-        return fd.getMonth() === d.getMonth() && fd.getFullYear() === d.getFullYear() && f.statut === 'Payé';
-      }).reduce((acc, f) => acc + (f.total_ht || 0), 0);
-      chartData.push(sumCents / 100);
-    }
-
-    window._revenueChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: chartData,
-          borderColor: '#3366FF',
-          backgroundColor: gradient,
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0,
-          pointHoverRadius: 6,
-          pointHoverBackgroundColor: '#3366FF',
-          pointHoverBorderColor: '#fff',
-          pointHoverBorderWidth: 2,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(15,21,53,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12, cornerRadius: 12, displayColors: false,
-            callbacks: { label: ctx => formatEuros(ctx.raw * 100) },
-          },
+  window._revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: chartData,
+        borderColor: '#3366FF',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#3366FF',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { backgroundColor: 'rgba(15,21,53,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12, cornerRadius: 12, displayColors: false,
+          callbacks: { label: ctx => formatEuros(ctx.raw * 100) },
         },
-        scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } },
-          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 }, callback: v => v + '€' } },
-        },
-        interaction: { intersect: false, mode: 'index' },
       },
-    });
-  } catch (e) { console.error('Dashboard chart error:', e); }
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 }, callback: v => v + '€' } },
+      },
+      interaction: { intersect: false, mode: 'index' },
+    },
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // CLIENTS VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderClients() {
-  let clients = [];
-  try { const r = await api.getClients(); clients = Array.isArray(r) ? r : []; } catch (e) { console.error('Clients error:', e); }
+  const clients = await api.getClients();
   return `
-  <div class="animate-slide-up max-w-7xl mx-auto">
-    <div class="flex items-end justify-between mb-8 border-b border-white/[0.1] pb-4">
+  <div class="animate-slide-up">
+    <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="swiss-title text-4xl text-white">Clients</h2>
-        <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mt-2">${clients.length} client${clients.length > 1 ? 's' : ''} enregistré${clients.length > 1 ? 's' : ''}</p>
+        <h2 class="text-xl font-bold">Gestion des Clients</h2>
+        <p class="text-sm text-white/40 mt-1">${clients.length} client${clients.length > 1 ? 's' : ''} enregistré${clients.length > 1 ? 's' : ''}</p>
       </div>
       <button onclick="showClientForm()" class="${btnPrimary} text-sm flex items-center gap-2">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
@@ -577,7 +529,7 @@ async function renderClients() {
 
 async function showClientForm(id = null) {
   let client = { nom: '', contact_email: '', id_fiscal: '' };
-  try { if (id) { client = await api.getClient(id) || client; } } catch (e) { toast('Erreur chargement client', 'error'); return; }
+  if (id) { client = await api.getClient(id); }
   openModal(`
     <div class="${glass} p-8">
       <h3 class="text-lg font-bold mb-6">${id ? 'Modifier le client' : 'Nouveau client'}</h3>
@@ -595,23 +547,19 @@ async function showClientForm(id = null) {
 
 async function submitClient(e, id) {
   e.preventDefault();
-  try {
-    const fd = new FormData(e.target);
-    const data = Object.fromEntries(fd);
-    let res;
-    if (id) { 
-      res = await api.updateClient(id, data); 
-    } else { 
-      res = await api.createClient(data); 
-    }
-    if (res && (res.status === 200 || res.status === 201)) {
-      toast(id ? 'Client mis à jour' : 'Client créé');
-      closeModal();
-      await renderView();
-    } else {
-      toast('Erreur: ' + (res?.data?.error || 'Sauvegarde échouée'), 'error');
-    }
-  } catch (err) { toast('Erreur: ' + (err.message || 'Impossible de sauvegarder'), 'error'); }
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd);
+  if (id) { 
+    const res = await api.updateClient(id, data); 
+    if (res.status !== 200) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur inconnue', 'error'); return; }
+    toast('Client mis à jour'); 
+  } else { 
+    const res = await api.createClient(data); 
+    if (res.status !== 201) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur inconnue', 'error'); return; }
+    toast('Client créé'); 
+  }
+  closeModal();
+  renderView();
 }
 
 async function deleteClient(id, nom) {
@@ -630,29 +578,26 @@ async function deleteClient(id, nom) {
 }
 
 async function confirmDeleteClient(id) {
-  try { await api.deleteClient(id); closeModal(); toast('Client supprimé'); renderView(); }
-  catch (err) { toast('Erreur suppression: ' + (err.message || ''), 'error'); }
+  await api.deleteClient(id);
+  closeModal(); toast('Client supprimé'); renderView();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROJETS VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderProjets() {
-  let projets = [], clients = [];
-  try {
-    const results = await Promise.all([api.getProjets(), api.getClients()]);
-    projets = Array.isArray(results[0]) ? results[0] : [];
-    clients = Array.isArray(results[1]) ? results[1] : [];
-  } catch (e) { console.error('Projets error:', e); }
+  const projets = await api.getProjets();
+  const clients = await api.getClients();
+  // Store clients globally for the form
   window._clients = clients;
   return `
-  <div class="animate-slide-up max-w-7xl mx-auto">
-    <div class="flex items-end justify-between mb-8 border-b border-white/[0.1] pb-4">
+  <div class="animate-slide-up">
+    <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="swiss-title text-4xl text-white">Projets</h2>
-        <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mt-2">${projets.length} projet${projets.length > 1 ? 's' : ''}</p>
+        <h2 class="text-xl font-bold">Gestion des Projets</h2>
+        <p class="text-sm text-white/40 mt-1">${projets.length} projet${projets.length > 1 ? 's' : ''}</p>
       </div>
-      <button onclick="showProjetForm()" class="${btnPrimary} text-sm flex items-center gap-2">
+      <button onclick="showProjetForm()" class="${btnPrimary} text-sm flex items-center gap-2" ${clients.length === 0 ? 'disabled title="Créez d\'abord un client"' : ''}>
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         Nouveau Projet
       </button>
@@ -698,11 +643,6 @@ async function renderProjets() {
 
 async function showProjetForm(id = null) {
   const clients = window._clients || await api.getClients();
-  if (!clients || clients.length === 0) {
-    toast("Veuillez d'abord créer un client.", "info");
-    navigate('clients');
-    return;
-  }
   let projet = { nom_projet: '', client_id: '', date_limite: '', statut: 'En cours', budget_euros: '' };
   if (id) { projet = await api.getProjet(id); }
   openModal(`
@@ -742,31 +682,30 @@ async function submitProjet(e, id) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd);
-
+  
   if (data.budget_euros) {
     data.budget_euros = String(data.budget_euros).replace(',', '.');
   }
 
   if (id) {
     const res = await api.updateProjet(id, data);
-    if (res.status !== 200 && res.status !== 201) { toast(res.data?.error || 'Erreur', 'error'); return; }
-    if (res.data?.peut_generer_facture) toast('Projet terminé ! Vous pouvez générer la facture.', 'info');
+    if (res.status !== 200) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur', 'error'); return; }
+    if (res.data.peut_generer_facture) toast('Projet terminé ! Vous pouvez générer la facture.', 'info');
     else toast('Projet mis à jour');
-  } else {
-    const res = await api.createProjet(data);
-    if (res.status !== 201 && res.status !== 200) { toast(res.data?.error || 'Erreur', 'error'); return; }
-    toast('Projet créé');
+  } else { 
+    const res = await api.createProjet(data); 
+    if (res.status !== 201) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur', 'error'); return; }
+    toast('Projet créé'); 
   }
-  closeModal();
-  await renderView();
+  closeModal(); renderView();
 }
 
 async function genererFacture(projetId) {
   const settings = JSON.parse(localStorage.getItem('freelance_settings') || '{"tva":"20"}');
   const res = await api.genererFacture(projetId, settings.tva);
-  if (res.status === 201 || res.status === 200) { toast('Facture générée avec succès !'); await renderView(); }
+  if (res.status === 201) { toast('Facture générée avec succès !'); renderView(); }
   else if (res.status === 409) { toast('Une facture existe déjà pour ce projet', 'error'); }
-  else { toast(res.data?.error || 'Erreur', 'error'); }
+  else { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur', 'error'); }
 }
 
 async function deleteProjet(id, nom) {
@@ -783,25 +722,20 @@ async function deleteProjet(id, nom) {
       </div>
     </div>`);
 }
-async function confirmDeleteProjet(id) { try { await api.deleteProjet(id); closeModal(); toast('Projet supprimé'); renderView(); } catch (err) { toast('Erreur: ' + (err.message || ''), 'error'); } }
+async function confirmDeleteProjet(id) { await api.deleteProjet(id); closeModal(); toast('Projet supprimé'); renderView(); }
 
 // ═══════════════════════════════════════════════════════════════════════
 // FACTURES VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderFactures() {
-  let factures = [];
-  try { const r = await api.getFactures(); factures = Array.isArray(r) ? r : []; } catch (e) { console.error('Factures error:', e); }
+  const factures = await api.getFactures();
   return `
-  <div class="animate-slide-up max-w-7xl mx-auto">
-    <div class="flex items-end justify-between mb-8 border-b border-white/[0.1] pb-4">
+  <div class="animate-slide-up">
+    <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="swiss-title text-4xl text-white">Factures</h2>
-        <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mt-2">${factures.length} facture${factures.length > 1 ? 's' : ''}</p>
+        <h2 class="text-xl font-bold">Factures</h2>
+        <p class="text-sm text-white/40 mt-1">${factures.length} facture${factures.length > 1 ? 's' : ''}</p>
       </div>
-      <button onclick="showNouvelleFactureModal()" class="${btnPrimary} text-sm flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-        Nouvelle Facture
-      </button>
     </div>
     ${factures.length === 0 ? `
       <div class="${glass} p-12 text-center">
@@ -903,76 +837,29 @@ async function showFactureDetail(id) {
       ${nextStatuts.length > 0 ? `
       <div class="flex gap-3 mt-4 border-t border-white/[0.06] pt-4">
         ${nextStatuts.map(s => {
-    const cls = s === 'Payé' ? 'bg-accent-green/20 hover:bg-accent-green/30 text-accent-green border-accent-green/30' :
-      s === 'Retard' ? 'bg-accent-orange/20 hover:bg-accent-orange/30 text-accent-orange border-accent-orange/30' :
-        'bg-electric/20 hover:bg-electric/30 text-electric-light border-electric/30';
-    return `<button onclick="updateFactureStatut(${f.id}, '${s}')" class="flex-1 ${cls} border font-semibold rounded-2xl px-5 py-3 transition-all">Marquer « ${s} »</button>`;
-  }).join('')}
+          const cls = s === 'Payé' ? 'bg-accent-green/20 hover:bg-accent-green/30 text-accent-green border-accent-green/30' :
+                      s === 'Retard' ? 'bg-accent-orange/20 hover:bg-accent-orange/30 text-accent-orange border-accent-orange/30' :
+                      'bg-electric/20 hover:bg-electric/30 text-electric-light border-electric/30';
+          return `<button onclick="updateFactureStatut(${f.id}, '${s}')" class="flex-1 ${cls} border font-semibold rounded-2xl px-5 py-3 transition-all">Marquer « ${s} »</button>`;
+        }).join('')}
       </div>` : '<p class="mt-4 pt-4 border-t border-white/[0.06] text-center text-sm text-accent-green font-medium">✓ Facture finalisée</p>'}
     </div>`);
 }
 
 async function updateFactureStatut(id, statut) {
   const res = await api.updateFacture(id, { statut });
-  if (res.status === 200) { toast(`Facture passée en "${statut}"`); closeModal(); await renderView(); }
-  else { toast(res.data?.error || 'Erreur de transition', 'error'); }
+  if (res.status === 200) { toast(`Facture passée en "${statut}"`); closeModal(); renderView(); }
+  else { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur de transition', 'error'); }
 }
-
-async function showNouvelleFactureModal() {
-  let projets = [];
-  try { projets = await api.getProjets(); } catch(e) {}
-  const projetsTermines = (Array.isArray(projets) ? projets : []).filter(p => p.statut === 'Terminé' && p.peut_generer_facture);
-  
-  if (projetsTermines.length === 0) {
-    toast("Aucun projet terminé en attente de facturation.", 'info');
-    return;
-  }
-  
-  openModal(`
-    <div class="${glass} p-8">
-      <h3 class="text-lg font-bold mb-6">Nouvelle Facture</h3>
-      <form id="facture-form" class="space-y-4" onsubmit="submitNouvelleFacture(event)">
-        <div>
-          <label class="${labelClass}">Sélectionner un projet validé</label>
-          <select name="projet_id" class="${selectClass}" required>
-            <option value="">-- Choisissez un projet --</option>
-            ${projetsTermines.map(p => `<option value="${p.id}">${p.nom_projet} (${p.client_nom})</option>`).join('')}
-          </select>
-        </div>
-        <div class="flex gap-3 pt-4">
-          <button type="submit" class="${btnPrimary} flex-1 text-sm">Générer la facture</button>
-          <button type="button" onclick="closeModal()" class="${btnSecondary} text-sm">Annuler</button>
-        </div>
-      </form>
-    </div>
-  `);
-}
-
-async function submitNouvelleFacture(e) {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const data = Object.fromEntries(fd);
-  if (!data.projet_id) return;
-  
-  const res = await api.genererFacture(data.projet_id, 20);
-  if (res.status === 201 || res.status === 200) {
-    toast('Facture générée !');
-    closeModal();
-    await renderView();
-  } else {
-    toast(res.data?.error || 'Erreur de génération', 'error');
-  }
-}
-
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROFIL VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderProfil() {
-  const p = await getUserProfil();
-
+  const p = JSON.parse(localStorage.getItem('freelance_profil') || `{"nom":"Freelancer","email":"freelancer@email.com","metier":"Développeur Web Full-Stack","bio":"Passionné par la création d'interfaces modernes et performantes. Plus de 5 ans d'expérience en JS, React et Node."}`);
+  
   let factures = [];
-  try { factures = await api.getFactures(); } catch (e) { }
+  try { factures = await api.getFactures(); } catch(e) {}
   window._factures = factures;
 
   const facturesPayees = factures.filter(f => f.statut === 'Payé');
@@ -980,79 +867,123 @@ async function renderProfil() {
   const totalClients = new Set(facturesPayees.map(f => f.client_id)).size;
 
   return `
-  <div class="animate-slide-up max-w-4xl mx-auto">
-    <div class="flex items-end justify-between mb-8 border-b border-white/[0.1] pb-4">
-      <h2 class="swiss-title text-4xl text-white">Profil</h2>
+  <div class="animate-slide-up max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold">Mon Profil</h2>
     </div>
     
-    <div class="grid grid-cols-1 gap-6">
+    <div class="grid grid-cols-12 gap-6">
       <!-- Form & Info -->
-      <div class="${glass} p-8">
-        <div class="flex items-center justify-between mb-8 border-b border-white/[0.1] pb-4">
-          <div class="flex items-center gap-6">
-            <div class="w-20 h-20 rounded-xl bg-electric flex items-center justify-center text-3xl font-swiss tracking-tight text-white relative group cursor-pointer border border-white/[0.2]">
-              ${p.nom.charAt(0).toUpperCase() || 'P'}
-            </div>
-            <div>
-              <h3 class="swiss-title text-3xl text-white/90">${p.nom || '—'}</h3>
-              <p class="text-xs font-swiss text-electric-light tracking-widest uppercase mt-1">${p.metier || 'Métier non défini'}</p>
+      <div class="col-span-12 lg:col-span-7 ${glass} p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-accent-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl pointer-events-none"></div>
+        <div class="flex items-center gap-6 mb-8">
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-electric to-accent-purple flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-electric/20 relative group cursor-pointer">
+            ${p.nom.charAt(0).toUpperCase()}
+            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zZM18.75 10.5h.008v.008h-.008V10.5z"/></svg>
             </div>
           </div>
-          <div class="text-right">
-            <p class="text-[10px] text-white/40 font-swiss uppercase tracking-widest mb-1">Total gagné</p>
-            <p class="swiss-title text-3xl text-electric-light">${totalGagne === 0 ? '— €' : formatEuros(totalGagne).replace(',00', '')}</p>
+          <div>
+            <h3 class="text-2xl font-bold text-white/90">${p.nom}</h3>
+            <p class="text-white/50">${p.metier}</p>
           </div>
         </div>
         
-        <form onsubmit="saveProfil(event)" class="space-y-6">
-          <div class="grid grid-cols-2 gap-6">
+        <form onsubmit="saveProfil(event)" class="space-y-5">
+          <div class="grid grid-cols-2 gap-5">
             <div><label class="${labelClass}">Nom complet</label><input name="nom" value="${p.nom}" class="${inputClass}" required></div>
             <div><label class="${labelClass}">Email</label><input type="email" name="email" value="${p.email}" class="${inputClass}" required></div>
           </div>
           <div><label class="${labelClass}">Métier</label><input name="metier" value="${p.metier}" class="${inputClass}"></div>
           <div><label class="${labelClass}">Bio</label><textarea name="bio" class="${inputClass} min-h-[100px] resize-none">${p.bio}</textarea></div>
-          <div class="pt-4"><button type="submit" class="${btnPrimary} w-full">${p.has_profil_db ? 'Mettre à jour le profil' : 'Créer et lier mon profil'}</button></div>
+          <div class="pt-2"><button type="submit" class="${btnPrimary} w-full animate-glow">Sauvegarder les modifications</button></div>
         </form>
+      </div>
+
+      <!-- Stats Career -->
+      <div class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+        <div class="animate-slide-up-2 ${glass} ${glassHover} p-6 h-full flex flex-col">
+          <h3 class="font-semibold text-white/90 mb-1">Statistiques de carrière</h3>
+          <p class="text-xs text-white/40 mb-6">Résumé global de votre activité</p>
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white/[0.03] rounded-2xl p-4">
+              <p class="text-[11px] text-white/40 mb-1 uppercase tracking-wider">Total gagné HT</p>
+              <p class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-electric-light to-accent-cyan">${formatEuros(totalGagne)}</p>
+            </div>
+            <div class="bg-white/[0.03] rounded-2xl p-4">
+              <p class="text-[11px] text-white/40 mb-1 uppercase tracking-wider">Clients servis</p>
+              <p class="text-2xl font-bold text-white/90">${totalClients}</p>
+            </div>
+          </div>
+          
+          <div class="flex-1 min-h-[180px] w-full mt-auto relative">
+            <canvas id="profil-chart"></canvas>
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
 }
 
-// ── Pas besoin de graphiques pour l'instant (plus brutaliste)
 function initProfilCharts() {
-  // Vide (Optionnel : si on veut on remettra un graph, mais Swiss Design sans pie chart est plus clean)
+  const canvas = document.getElementById('profil-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  const facturesPayees = (window._factures || []).filter(f => f.statut === 'Payé');
+  const clientTots = {};
+  facturesPayees.forEach(f => {
+    clientTots[f.client_nom] = (clientTots[f.client_nom] || 0) + (f.total_ht || 0);
+  });
+  
+  let labels = Object.keys(clientTots);
+  let data = Object.values(clientTots).map(v => v / 100);
+  let bgColors = data.map((_, i) => ['#3366FF', '#00D4FF', '#B388FF', '#FF00A0', '#00DF9A'][i % 5]);
+  
+  if (labels.length === 0) {
+    labels = ['Aucune donnée'];
+    data = [1];
+    bgColors = ['rgba(255,255,255,0.05)'];
+  }
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: bgColors,
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '75%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+        tooltip: { backgroundColor: 'rgba(15,21,53,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10, cornerRadius: 8 }
+      }
+    }
+  });
 }
 
-async function saveProfil(e) {
+function saveProfil(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd);
-  
-  try {
-    const res = await api.saveProfil(data);
-    if (res && res.status !== 200 && res.status !== 201) {
-      toast(res.data?.error || 'Erreur lors de la sauvegarde du profil', 'error');
-      return;
-    }
-  } catch (err) {
-    console.error('saveProfil error:', err);
-  }
-  
-  // Fallback / Cache local
   localStorage.setItem('freelance_profil', JSON.stringify(data));
-
-  // Mettre à jour l'affichage dans le header
-  const nameEl = document.getElementById('header-user-name');
-  const emailEl = document.getElementById('header-user-email');
-  const dName = document.getElementById('dropdown-user-name');
-  const dEmail = document.getElementById('dropdown-user-email');
-  if (nameEl) nameEl.textContent = data.nom;
-  if (emailEl) emailEl.textContent = data.email;
-  if (dName) dName.textContent = data.nom;
-  if (dEmail) dEmail.textContent = data.email;
-
+  
+  // Mettre à jour l'affichage en haut à droite
+  const dropdownName = document.querySelector('#profile-dropdown p.font-semibold');
+  const dropdownEmail = document.querySelector('#profile-dropdown p.text-xs');
+  const btnName = document.querySelector('#profile-btn p.font-medium');
+  if (dropdownName) dropdownName.textContent = data.nom;
+  if (dropdownEmail) dropdownEmail.textContent = data.email;
+  if (btnName) btnName.textContent = data.nom;
+  
   toast('Profil mis à jour avec succès');
-  renderView();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1060,7 +991,7 @@ async function saveProfil(e) {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderParametres() {
   const s = JSON.parse(localStorage.getItem('freelance_settings') || '{"siret":"123 456 789 00012","adresse":"123 Rue de la Startup\\n75001 Paris, France","tva":"20","theme":"dark"}');
-
+  
   return `
   <div class="animate-slide-up max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
@@ -1120,11 +1051,37 @@ function saveParametres(e) {
 // LOGIN VIEW
 // ═══════════════════════════════════════════════════════════════════════
 function renderLogin() {
-  // Login is now handled by login.html — redirect there
-  window.location.href = '/login.html';
-  return '<div class="flex items-center justify-center h-64"><p class="text-white/50">Redirection vers la page de connexion...</p></div>';
-}
+  return `
+  <div class="fixed inset-0 flex items-center justify-center bg-navy-950 z-[100] animate-fade-in bg-cover bg-center" style="background-image: radial-gradient(circle at top right, rgba(51,102,255,0.15), transparent 40%), radial-gradient(circle at bottom left, rgba(0,212,255,0.1), transparent 40%);">
+    
+    <!-- Background Decor -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric/20 blur-[120px] rounded-full pointer-events-none"></div>
 
+    <div class="w-full max-w-md ${glass} p-10 relative z-10 animate-scale-in border-white/[0.1] shadow-2xl shadow-black">
+      
+      <div class="flex justify-center mb-6">
+        <img src="/logo_freelance.png" alt="eCons Freelance Logo" class="h-16 object-contain rounded-2xl shadow-lg shadow-blue-500/20">
+      </div>
+      
+      <h2 class="text-2xl font-bold text-center text-white/90 mb-2">Bienvenue</h2>
+      <p class="text-sm text-white/40 text-center mb-8">Connectez-vous à votre espace Freelance MVP</p>
+      
+      <form onsubmit="login(event)" class="space-y-5">
+        <div>
+          <label class="${labelClass}">Email</label>
+          <input type="email" class="${inputClass} bg-white/[0.03]" value="freelancer@email.com" required>
+        </div>
+        <div>
+          <label class="${labelClass}">Mot de passe</label>
+          <input type="password" class="${inputClass} bg-white/[0.03]" value="password123" required>
+        </div>
+        <div class="pt-4">
+          <button type="submit" class="${btnPrimary} w-full text-base py-3.5 shadow-electric/30 hover:shadow-electric/50">Se connecter</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROFILE DROPDOWN
@@ -1151,23 +1108,34 @@ function closeProfileMenu() {
 function profileAction(action) {
   closeProfileMenu();
   switch (action) {
-    case 'profil': navigate('profil'); break;
-    case 'parametres': navigate('parametres'); break;
-    case 'deconnexion': signOut(); break; // calls supabase-auth.js signOut()
+    case 'profil':      navigate('profil'); break;
+    case 'parametres':  navigate('parametres'); break;
+    case 'deconnexion': logout(); break;
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// AUTHENTICATION — powered by Supabase (see supabase-auth.js)
+// AUTHENTICATION (Mock)
 // ═══════════════════════════════════════════════════════════════════════
 function checkAuth() {
-  // Auth is handled by the guard in index.html (requireSession)
-  // If we're here, the user is already authenticated
-  return true;
+  return localStorage.getItem('freelance_auth') === 'true';
+}
+
+function login(e) {
+  e.preventDefault();
+  localStorage.setItem('freelance_auth', 'true');
+  window.location.hash = 'dashboard';
+  checkLayout();
+  navigate('dashboard');
+  toast('Bienvenue, Freelancer !');
 }
 
 function logout() {
-  signOut(); // from supabase-auth.js — clears session + redirects to /login.html
+  localStorage.removeItem('freelance_auth');
+  window.location.hash = 'login';
+  checkLayout();
+  navigate('login');
+  toast('Vous êtes déconnecté', 'info');
 }
 
 function checkLayout() {
@@ -1175,7 +1143,7 @@ function checkLayout() {
   const sidebar = document.getElementById('sidebar');
   const header = document.querySelector('header');
   const main = document.querySelector('main');
-
+  
   if (!isAuth) {
     if (sidebar) sidebar.style.display = 'none';
     if (header) header.style.display = 'none';
@@ -1201,7 +1169,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const initialHash = window.location.hash.slice(1);
   const hash = checkAuth() ? (initialHash && initialHash !== 'login' ? initialHash : 'dashboard') : 'login';
   navigate(hash);
-
+  
   // Close profile dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#profile-btn') && !e.target.closest('#profile-dropdown')) {
