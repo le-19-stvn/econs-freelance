@@ -6,8 +6,15 @@ const API_BASE = '/api';
 const api = {
   // ── Clients ─────────────────────────────────────────────────────────
   async getClients() {
-    const res = await fetch(`${API_BASE}/clients`);
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/clients`);
+      if (!res.ok) throw new Error("Erreur HTTP");
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (typeof toast !== 'undefined') toast("Erreur de connexion aux données (Clients)", "error");
+      return [];
+    }
   },
 
   async getClient(id) {
@@ -40,8 +47,15 @@ const api = {
 
   // ── Projets ─────────────────────────────────────────────────────────
   async getProjets() {
-    const res = await fetch(`${API_BASE}/projets`);
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/projets`);
+      if (!res.ok) throw new Error("Erreur HTTP");
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (typeof toast !== 'undefined') toast("Erreur de connexion aux données (Projets)", "error");
+      return [];
+    }
   },
 
   async getProjet(id) {
@@ -74,8 +88,15 @@ const api = {
 
   // ── Factures ────────────────────────────────────────────────────────
   async getFactures() {
-    const res = await fetch(`${API_BASE}/factures`);
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/factures`);
+      if (!res.ok) throw new Error("Erreur HTTP");
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (typeof toast !== 'undefined') toast("Erreur de connexion aux données (Factures)", "error");
+      return [];
+    }
   },
 
   async getFacture(id) {

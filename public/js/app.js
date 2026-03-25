@@ -164,7 +164,7 @@ async function generateInvoicePDF(factureId) {
     };
 
     // Use jsPDF's native save() to force a proper binary PDF download
-    await html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
+    await html2pdf().set(opt).from(element).toPdf().get('pdf').then(function (pdf) {
       pdf.save(filename);
     });
 
@@ -199,10 +199,10 @@ function closeModal() {
 
 // ── Navigation ────────────────────────────────────────────────────────
 let currentView = 'dashboard';
-const pageTitles = { 
-  dashboard: 'Dashboard', 
-  clients: 'Clients', 
-  projets: 'Projets', 
+const pageTitles = {
+  dashboard: 'Dashboard',
+  clients: 'Clients',
+  projets: 'Projets',
   factures: 'Factures',
   profil: 'Mon Profil',
   parametres: 'Paramètres',
@@ -214,12 +214,12 @@ function navigate(view) {
     view = 'login';
     window.location.hash = 'login';
   }
-  
+
   currentView = view;
   window.location.hash = view;
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = pageTitles[view] || view;
-  
+
   document.querySelectorAll('.nav-btn').forEach(btn => {
     const isActive = btn.dataset.nav === view;
     btn.classList.toggle('bg-electric/20', isActive);
@@ -235,15 +235,29 @@ async function renderView() {
     el.innerHTML = renderLogin();
     return;
   }
-  
-  el.innerHTML = '<div class="flex items-center justify-center h-64"><div class="w-8 h-8 border-2 border-electric/30 border-t-electric rounded-full animate-spin"></div></div>';
-  switch (currentView) {
-    case 'dashboard': el.innerHTML = await renderDashboard(); initDashboardCharts(); break;
-    case 'clients':   el.innerHTML = await renderClients(); break;
-    case 'projets':   el.innerHTML = await renderProjets(); break;
-    case 'factures':  el.innerHTML = await renderFactures(); break;
-    case 'profil':    el.innerHTML = await renderProfil(); initProfilCharts(); break;
-    case 'parametres':el.innerHTML = await renderParametres(); break;
+
+  // Loader avec un identifiant de conteneur
+  el.innerHTML = '<div id="main-loader" class="flex items-center justify-center h-64"><div class="w-8 h-8 border-2 border-electric/30 border-t-electric rounded-full animate-spin"></div></div>';
+
+  try {
+    switch (currentView) {
+      case 'dashboard': el.innerHTML = await renderDashboard(); initDashboardCharts(); break;
+      case 'clients': el.innerHTML = await renderClients(); break;
+      case 'projets': el.innerHTML = await renderProjets(); break;
+      case 'factures': el.innerHTML = await renderFactures(); break;
+      case 'profil': el.innerHTML = await renderProfil(); initProfilCharts(); break;
+      case 'parametres': el.innerHTML = await renderParametres(); break;
+    }
+  } catch (error) {
+    console.error("Erreur bloquante dans renderView():", error);
+    toast("Une erreur interne empêche l'affichage", "error");
+    el.innerHTML = '<div class="flex items-center justify-center h-64 text-white/50 text-sm">Le système a rencontré une erreur. Veuillez recharger.</div>';
+  } finally {
+    // 🛑 Arrêt strict du loader, quoi qu'il s'y soit passé
+    const loader = document.getElementById('main-loader');
+    if (loader) {
+      loader.classList.add('hidden');
+    }
   }
 }
 
@@ -252,7 +266,7 @@ async function renderView() {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderDashboard() {
   let clients = [], projets = [], factures = [];
-  try { [clients, projets, factures] = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]); } catch(e) {}
+  try { [clients, projets, factures] = await Promise.all([api.getClients(), api.getProjets(), api.getFactures()]); } catch (e) { }
 
   // Store factures globally for charts
   window._factures = factures;
@@ -322,7 +336,7 @@ async function renderDashboard() {
         </div>
         <div class="flex flex-col gap-3">
           ${facturesEnAttente.length === 0 ? '<p class="text-sm text-white/30 text-center py-6">Aucune facture en attente</p>' :
-            facturesEnAttente.slice(0, 5).map(f => `
+      facturesEnAttente.slice(0, 5).map(f => `
             <div class="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-200 cursor-pointer group" onclick="navigate('factures')">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl ${f.statut === 'Retard' ? 'bg-accent-orange/15' : 'bg-electric/15'} flex items-center justify-center">
@@ -373,10 +387,10 @@ async function renderDashboard() {
           <!-- 3D cylindrical bars -->
           <div class="flex items-end justify-between h-44 pt-6 px-2">
             ${months.map((m, i) => {
-              const pct = (values[i] / maxVal) * 100;
-              const change = i > 0 ? (((values[i] - values[i-1]) / values[i-1]) * 100).toFixed(1) : '+0.0';
-              const isPositive = i === 0 || values[i] >= values[i-1];
-              return `
+        const pct = (values[i] / maxVal) * 100;
+        const change = i > 0 ? (((values[i] - values[i - 1]) / values[i - 1]) * 100).toFixed(1) : '+0.0';
+        const isPositive = i === 0 || values[i] >= values[i - 1];
+        return `
               <div class="flex flex-col items-center gap-2 flex-1 group">
                 <span class="text-[10px] font-medium ${isPositive ? 'text-accent-green' : 'text-accent-red'} opacity-0 group-hover:opacity-100 transition-opacity">${isPositive ? '+' : ''}${change}%</span>
                 <div class="w-8 md:w-10 relative transition-all duration-500 group-hover:scale-105" style="height:${pct}%">
@@ -386,7 +400,7 @@ async function renderDashboard() {
                 </div>
                 <span class="text-[11px] text-white/35 font-medium">${m}</span>
               </div>`;
-            }).join('')}
+      }).join('')}
           </div>
           <div class="flex items-center gap-4 mt-4 pt-4 border-t border-white/[0.06]">
             <span class="flex items-center gap-1.5 text-[11px] text-white/40"><span class="w-2.5 h-2.5 rounded-full bg-gradient-to-t from-electric/50 to-accent-cyan/50"></span>Revenus</span>
@@ -430,7 +444,7 @@ function initDashboardCharts() {
   const chartData = [];
   const now = new Date();
   const factures = window._factures || [];
-  
+
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mStr = d.toLocaleString('fr-FR', { month: 'short' });
@@ -462,8 +476,10 @@ function initDashboardCharts() {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false },
-        tooltip: { backgroundColor: 'rgba(15,21,53,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12, cornerRadius: 12, displayColors: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,21,53,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12, cornerRadius: 12, displayColors: false,
           callbacks: { label: ctx => formatEuros(ctx.raw * 100) },
         },
       },
@@ -549,14 +565,14 @@ async function submitClient(e, id) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd);
-  if (id) { 
-    const res = await api.updateClient(id, data); 
+  if (id) {
+    const res = await api.updateClient(id, data);
     if (res.status !== 200) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur inconnue', 'error'); return; }
-    toast('Client mis à jour'); 
-  } else { 
-    const res = await api.createClient(data); 
+    toast('Client mis à jour');
+  } else {
+    const res = await api.createClient(data);
     if (res.status !== 201) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur inconnue', 'error'); return; }
-    toast('Client créé'); 
+    toast('Client créé');
   }
   closeModal();
   renderView();
@@ -682,7 +698,7 @@ async function submitProjet(e, id) {
   e.preventDefault();
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd);
-  
+
   if (data.budget_euros) {
     data.budget_euros = String(data.budget_euros).replace(',', '.');
   }
@@ -692,10 +708,10 @@ async function submitProjet(e, id) {
     if (res.status !== 200) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur', 'error'); return; }
     if (res.data.peut_generer_facture) toast('Projet terminé ! Vous pouvez générer la facture.', 'info');
     else toast('Projet mis à jour');
-  } else { 
-    const res = await api.createProjet(data); 
+  } else {
+    const res = await api.createProjet(data);
     if (res.status !== 201) { toast(res.data.details || res.data.error?.message || res.data.error || 'Erreur', 'error'); return; }
-    toast('Projet créé'); 
+    toast('Projet créé');
   }
   closeModal(); renderView();
 }
@@ -837,11 +853,11 @@ async function showFactureDetail(id) {
       ${nextStatuts.length > 0 ? `
       <div class="flex gap-3 mt-4 border-t border-white/[0.06] pt-4">
         ${nextStatuts.map(s => {
-          const cls = s === 'Payé' ? 'bg-accent-green/20 hover:bg-accent-green/30 text-accent-green border-accent-green/30' :
-                      s === 'Retard' ? 'bg-accent-orange/20 hover:bg-accent-orange/30 text-accent-orange border-accent-orange/30' :
-                      'bg-electric/20 hover:bg-electric/30 text-electric-light border-electric/30';
-          return `<button onclick="updateFactureStatut(${f.id}, '${s}')" class="flex-1 ${cls} border font-semibold rounded-2xl px-5 py-3 transition-all">Marquer « ${s} »</button>`;
-        }).join('')}
+    const cls = s === 'Payé' ? 'bg-accent-green/20 hover:bg-accent-green/30 text-accent-green border-accent-green/30' :
+      s === 'Retard' ? 'bg-accent-orange/20 hover:bg-accent-orange/30 text-accent-orange border-accent-orange/30' :
+        'bg-electric/20 hover:bg-electric/30 text-electric-light border-electric/30';
+    return `<button onclick="updateFactureStatut(${f.id}, '${s}')" class="flex-1 ${cls} border font-semibold rounded-2xl px-5 py-3 transition-all">Marquer « ${s} »</button>`;
+  }).join('')}
       </div>` : '<p class="mt-4 pt-4 border-t border-white/[0.06] text-center text-sm text-accent-green font-medium">✓ Facture finalisée</p>'}
     </div>`);
 }
@@ -857,9 +873,9 @@ async function updateFactureStatut(id, statut) {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderProfil() {
   const p = JSON.parse(localStorage.getItem('freelance_profil') || `{"nom":"Freelancer","email":"freelancer@email.com","metier":"Développeur Web Full-Stack","bio":"Passionné par la création d'interfaces modernes et performantes. Plus de 5 ans d'expérience en JS, React et Node."}`);
-  
+
   let factures = [];
-  try { factures = await api.getFactures(); } catch(e) {}
+  try { factures = await api.getFactures(); } catch (e) { }
   window._factures = factures;
 
   const facturesPayees = factures.filter(f => f.statut === 'Payé');
@@ -930,23 +946,23 @@ function initProfilCharts() {
   const canvas = document.getElementById('profil-chart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   const facturesPayees = (window._factures || []).filter(f => f.statut === 'Payé');
   const clientTots = {};
   facturesPayees.forEach(f => {
     clientTots[f.client_nom] = (clientTots[f.client_nom] || 0) + (f.total_ht || 0);
   });
-  
+
   let labels = Object.keys(clientTots);
   let data = Object.values(clientTots).map(v => v / 100);
   let bgColors = data.map((_, i) => ['#3366FF', '#00D4FF', '#B388FF', '#FF00A0', '#00DF9A'][i % 5]);
-  
+
   if (labels.length === 0) {
     labels = ['Aucune donnée'];
     data = [1];
     bgColors = ['rgba(255,255,255,0.05)'];
   }
-  
+
   new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -974,7 +990,7 @@ function saveProfil(e) {
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd);
   localStorage.setItem('freelance_profil', JSON.stringify(data));
-  
+
   // Mettre à jour l'affichage en haut à droite
   const dropdownName = document.querySelector('#profile-dropdown p.font-semibold');
   const dropdownEmail = document.querySelector('#profile-dropdown p.text-xs');
@@ -982,7 +998,7 @@ function saveProfil(e) {
   if (dropdownName) dropdownName.textContent = data.nom;
   if (dropdownEmail) dropdownEmail.textContent = data.email;
   if (btnName) btnName.textContent = data.nom;
-  
+
   toast('Profil mis à jour avec succès');
 }
 
@@ -991,7 +1007,7 @@ function saveProfil(e) {
 // ═══════════════════════════════════════════════════════════════════════
 async function renderParametres() {
   const s = JSON.parse(localStorage.getItem('freelance_settings') || '{"siret":"123 456 789 00012","adresse":"123 Rue de la Startup\\n75001 Paris, France","tva":"20","theme":"dark"}');
-  
+
   return `
   <div class="animate-slide-up max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
@@ -1108,8 +1124,8 @@ function closeProfileMenu() {
 function profileAction(action) {
   closeProfileMenu();
   switch (action) {
-    case 'profil':      navigate('profil'); break;
-    case 'parametres':  navigate('parametres'); break;
+    case 'profil': navigate('profil'); break;
+    case 'parametres': navigate('parametres'); break;
     case 'deconnexion': logout(); break;
   }
 }
@@ -1143,7 +1159,7 @@ function checkLayout() {
   const sidebar = document.getElementById('sidebar');
   const header = document.querySelector('header');
   const main = document.querySelector('main');
-  
+
   if (!isAuth) {
     if (sidebar) sidebar.style.display = 'none';
     if (header) header.style.display = 'none';
@@ -1169,7 +1185,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const initialHash = window.location.hash.slice(1);
   const hash = checkAuth() ? (initialHash && initialHash !== 'login' ? initialHash : 'dashboard') : 'login';
   navigate(hash);
-  
+
   // Close profile dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#profile-btn') && !e.target.closest('#profile-dropdown')) {

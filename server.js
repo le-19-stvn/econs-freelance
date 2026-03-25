@@ -1,50 +1,77 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const { initDatabase } = require('./db/database');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Middleware ───────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Logging Middleware (Vercel) ───────────────────────────────────────
-app.use('/api', (req, res, next) => {
-  console.log(`[ROUTE DÉMARRÉE] ${req.method} /api${req.url}`);
-  if (Object.keys(req.body || {}).length > 0) {
-    console.log(`[BODY]`, JSON.stringify(req.body).substring(0, 500));
-  }
-  next();
-});
+// Initialisation de Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'METS_TON_URL_ICI_SI_NECESSAIRE';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'METS_TA_CLE_ICI';
 
-// ── Routes API ──────────────────────────────────────────────────────
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/clients', require('./routes/clients'));
-app.use('/api/projets', require('./routes/projets'));
-app.use('/api/factures', require('./routes/factures'));
+// ── Fonction helper pour répliquer le contexte d'Auth (le Token JWT) ──
+function getSupabaseWithAuth(req) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) throw new Error("Token JWT manquant dans les headers");
 
-// ── Gestion d'erreur globale ────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error(`❌ [Erreur Supabase / Serveur] :`, err.message, err.stack);
-  res.status(500).json({ error: 'Erreur interne du serveur', details: err.message });
-});
-
-// ── Démarrage asynchrone (sql.js est async) ─────────────────────────
-async function start() {
-  await initDatabase();
-  console.log('✅ Base de données initialisée');
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+  // On passe le token pour prouver à Supabase et au RLS qui fait la requête
+  return createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
   });
 }
 
-start().catch(err => {
-  console.error('💥 Échec au démarrage :', err);
-  process.exit(1);
+// ── Routes GET ultra défensives ───────────────────────────────
+
+app.get('/api/clients', async (req, res) => {
+  try {
+    const supabase = getSupabaseWithAuth(req);
+    const { data, error } = await supabase.from('clients').select('*');
+    if (error) throw error;
+
+    return res.status(200).json(data || []);
+  } catch (error) {
+    console.error("❌ Erreur /api/clients:", error.message);
+    return res.status(500).json({ error: error.message, details: "Erreur Supabase" });
+  }
+});
+
+app.get('/api/projets', async (req, res) => {
+  try {
+    const supabase = getSupabaseWithAuth(req);
+    const { data, error } = await supabase.from('projects').select('*, clients(nom, contact_email)');
+    if (error) throw error;
+
+    return res.status(200).json(data || []);
+  } catch (error) {
+    console.error("❌ Erreur /api/projets:", error.message);
+    return res.status(500).json({ error: error.message, details: "Erreur Supabase" });
+  }
+});
+
+app.get('/api/factures', async (req, res) => {
+  try {
+    const supabase = getSupabaseWithAuth(req);
+    const { data, error } = await supabase.from('invoices').select('*, clients(*), projects(*)');
+    if (error) throw error;
+
+    return res.status(200).json(data || []);
+  } catch (error) {
+    console.error("❌ Erreur /api/factures:", error.message);
+    return res.status(500).json({ error: error.message, details: "Erreur Supabase" });
+  }
+});
+
+// ── Gestionnaire d'erreur natif Express (Filet de sécurité final) ──
+app.use((err, req, res, next) => {
+  console.error(`💥 [Erreur Non Capturée] :`, err.stack);
+  res.status(500).json({ error: err.message, details: "Erreur Supabase" });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Serveur Backend Supabase démarré sur le port ${PORT}`);
 });
 
 module.exports = app;
